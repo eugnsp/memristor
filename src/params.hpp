@@ -1,5 +1,5 @@
 #pragma once
-#include <es_phys/atomic_units.hpp>
+#include <es_util/phys.hpp>
 
 // TODO : move into params
 enum Mesh_tags : unsigned int
@@ -12,7 +12,7 @@ enum Mesh_tags : unsigned int
 
 namespace params
 {
-using namespace es_phys::au::literals;
+using namespace es_util::au::literals;
 
 //////////////////////////////////////////////////////////////////////
 /** Monte-Carlo simulation */

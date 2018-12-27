@@ -12,8 +12,7 @@
 #include <es_fe/mesh/mesh2.hpp>
 #include <es_geom/algorithm.hpp>
 #include <es_geom/compare.hpp>
-#include <es_math/const.hpp>
-#include <es_phys/atomic_units.hpp>
+#include <es_util/phys.hpp>
 #include <es_util/numeric.hpp>
 
 #include <array>
@@ -32,7 +31,7 @@ class Simulator
 public:
 	void run(int /* argc */, const char** /* argv */)
 	{
-		using namespace es_phys::au::literals;
+		using namespace es_util::au::literals;
 
 		// Step 1
 		init();
@@ -67,7 +66,7 @@ public:
 		while (true)
 		{
 			std::cout << std::left << std::setw(4) << i + 1 << ' ' << std::setw(9)
-					  << es_phys::au::to_sec(time) * 1e3 << ' ' << std::flush;
+					  << es_util::au::to_sec(time) * 1e3 << ' ' << std::flush;
 
 			// Step 3
 			const auto fil_shape = filament_shape(mc_);
@@ -77,8 +76,8 @@ public:
 			// Step 4
 			compute_potential_and_heating(fil_shape);
 			std::cout << std::setw(9) << fil_size << ' ' << std::setw(9)
-					  << es_phys::au::to_volt(voltage_bias_) << ' ' << std::setw(9)
-					  << es_phys::au::to_amp(current_) * 1e6 << ' ' << std::flush;
+					  << es_util::au::to_volt(voltage_bias_) << ' ' << std::setw(9)
+					  << es_util::au::to_amp(current_) * 1e6 << ' ' << std::flush;
 
 			// Step 5
 			heat_solver.solve();
@@ -90,7 +89,7 @@ public:
 			// Step 6
 			double time_step = params::min_step_duration;
 			double est_step_duration = mc_.estimate_step_duration(rate_fn);
-			std::cout << std::setw(9) << es_phys::au::to_sec(est_step_duration) * 1e6 << "    "
+			std::cout << std::setw(9) << es_util::au::to_sec(est_step_duration) * 1e6 << "    "
 					  << std::flush;
 
 			if (est_step_duration < time_step)
@@ -105,8 +104,8 @@ public:
 				std::cout << 0 << std::endl;
 
 			{
-				biases.push_back(es_phys::au::to_volt(voltage_bias_));
-				currents.push_back(es_phys::au::to_amp(current_) * 1e6);
+				biases.push_back(es_util::au::to_volt(voltage_bias_));
+				currents.push_back(es_util::au::to_amp(current_) * 1e6);
 
 				la::Matfile_writer mw("iv.mat");
 				mw.write("v", biases);

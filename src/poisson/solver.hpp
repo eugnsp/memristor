@@ -2,7 +2,6 @@
 #include "system.hpp"
 #include "../params.hpp"
 
-#include <es_math/const.hpp>
 #include <es_la/solver/pardiso_solver.hpp>
 #include <es_la/io/matfile_writer.hpp>
 #include <es_geom/algorithm.hpp>
@@ -149,7 +148,7 @@ public:
 
 	virtual void after_solve() override
 	{
-		using namespace es_phys::au::literals;
+		using namespace es_util::au::literals;
 		return;
 
 		la::Vector_xd phi(*mesh().n_vertices(), 0);
@@ -158,7 +157,7 @@ public:
 		{
 			typename Base::System::template Var_vertex_dofs<0> vertex_dofs;
 			system().dof_mapper().template vertex_dofs<0>(vertex, vertex_dofs);
-			phi[*vertex] = es_phys::au::to_volt(solution_[vertex_dofs[0].index]);
+			phi[*vertex] = es_util::au::to_volt(solution_[vertex_dofs[0].index]);
 		}
 
 		es_fe::Matlab_writer m("p.mat", mesh(), 1_nm);
@@ -167,7 +166,7 @@ public:
 
 	void write(const std::string& file_name)
 	{
-		using namespace es_phys::au::literals;
+		using namespace es_util::au::literals;
 //		return;
 
 		la::Vector_xd phi(*mesh().n_vertices(), 0);
@@ -176,7 +175,7 @@ public:
 		{
 			typename Base::System::template Var_vertex_dofs<0> vertex_dofs;
 			system().dof_mapper().template vertex_dofs<0>(vertex, vertex_dofs);
-			phi[*vertex] = es_phys::au::to_volt(solution_[vertex_dofs[0].index]);
+			phi[*vertex] = es_util::au::to_volt(solution_[vertex_dofs[0].index]);
 		}
 
 		es_fe::Matlab_writer m(file_name, mesh(), 1_nm);

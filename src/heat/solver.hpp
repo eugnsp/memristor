@@ -2,7 +2,7 @@
 #include "system.hpp"
 #include "../params.hpp"
 
-#include <es_math/const.hpp>
+#include <es_util/numeric.hpp>
 #include <es_la/solver/pardiso_solver.hpp>
 #include <es_la/io/matfile_writer.hpp>
 #include <es_geom/algorithm.hpp>
@@ -23,7 +23,7 @@
 #include <es_fe/io/matlab_writer.hpp>
 #include <es_fe/io/vtk_writer_3d.hpp>
 
-#include <es_phys/atomic_units.hpp>
+#include <es_util/phys.hpp>
 
 #include <algorithm>
 #include <cstddef>
@@ -32,8 +32,6 @@
 #include <unordered_map>
 
 #include <iostream>
-
-#include <es_phys/atomic_units.hpp>
 
 #define USE_FULL_MATRIX2
 
@@ -161,7 +159,7 @@ public:
 		const auto p3 = (++vertex_circ)->vertex();
 
 		const auto f = es_geom::area(face) * es_geom::center(face).x()
-			/ (math::pi * params::heat_source_radius * params::heat_source_radius);
+			/ (es_util::math::pi * params::heat_source_radius * params::heat_source_radius);
 
 		using Q = es_fe::Quadr<5, 2>;
 		const auto vector = es_fe::load_vector<Element, Q>(
@@ -222,7 +220,7 @@ public:
 
 	virtual void after_solve() override
 	{
-		using namespace es_phys::au::literals;
+		using namespace es_util::au::literals;
 		//		return;
 
 		la::Vector_xd temp(*mesh().n_vertices(), 0);
@@ -231,7 +229,7 @@ public:
 		{
 			typename Base::System::template Var_vertex_dofs<0> vertex_dofs;
 			system().dof_mapper().template vertex_dofs<0>(vertex, vertex_dofs);
-			temp[*vertex] = es_phys::au::to_kelvin(solution_[vertex_dofs[0].index]);
+			temp[*vertex] = es_util::au::to_kelvin(solution_[vertex_dofs[0].index]);
 		}
 
 		es_fe::Matlab_writer m("h.mat", mesh(), 1_nm);
@@ -240,7 +238,7 @@ public:
 
 	void write(const std::string& file_name) const
 	{
-using namespace es_phys::au::literals;
+		using namespace es_util::au::literals;
 		//		return;
 
 		la::Vector_xd temp(*mesh().n_vertices(), 0);
@@ -249,7 +247,7 @@ using namespace es_phys::au::literals;
 		{
 			typename Base::System::template Var_vertex_dofs<0> vertex_dofs;
 			system().dof_mapper().template vertex_dofs<0>(vertex, vertex_dofs);
-			temp[*vertex] = es_phys::au::to_kelvin(solution_[vertex_dofs[0].index]);
+			temp[*vertex] = es_util::au::to_kelvin(solution_[vertex_dofs[0].index]);
 		}
 
 		es_fe::Matlab_writer m(file_name, mesh(), 1_nm);

@@ -3,7 +3,6 @@
 #include "monte_carlo/point.hpp"
 #include "params.hpp"
 
-#include <es_math/const.hpp>
 #include <es_util/numeric.hpp>
 
 #include <algorithm>
@@ -24,7 +23,7 @@ std::vector<double> Simulator::compute_resistivity(
 
 		if (const auto radius = filament_shape[z]; radius > 0)
 		{
-			const auto area = math::pi * es_util::sq(params::grid_spacing * radius);
+			const auto area = es_util::math::pi * es_util::sq(params::grid_spacing * radius);
 			resist[z] = params::filament_resistivity / area;
 		}
 		else

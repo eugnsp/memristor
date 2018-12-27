@@ -9,7 +9,7 @@
 #include <es_fe/mesh/tools/mesh_filter.hpp>
 #include <es_geom/algorithm.hpp>
 #include <es_geom/compare.hpp>
-#include <es_phys/atomic_units.hpp>
+#include <es_util/phys.hpp>
 #include <es_util/numeric.hpp>
 
 #include <algorithm>
@@ -21,7 +21,7 @@
 
 void Simulator::init_meshes(const char* mesh_file)
 {
-	using namespace es_phys::au::literals;
+	using namespace es_util::au::literals;
 
 	const unsigned int physical_tag_index = 1;
 	heat_mesh_ = es_fe::read_gmsh_mesh(mesh_file, 1_nm);
@@ -41,7 +41,7 @@ void Simulator::init_meshes(const char* mesh_file)
 
 void Simulator::init()
 {
-	using namespace es_phys::au::literals;
+	using namespace es_util::au::literals;
 
 	init_meshes("../mesh/mesh3.msh");
 
@@ -84,8 +84,8 @@ void Simulator::init()
 
 	mc_.init_uniform(params::initial_filling);
 
-	std::cout << "System diameter: " << es_phys::au::to_nm(2 * system_radius_) << " nm\n"
-			  << "System height:   " << es_phys::au::to_nm(system_height_)
+	std::cout << "System diameter: " << es_util::au::to_nm(2 * system_radius_) << " nm\n"
+			  << "System height:   " << es_util::au::to_nm(system_height_)
 			  << " nm\n\n"
 			  //   << "Poisson/heat FEM mesh file: " << mesh_file << '\n'
 			  << poisson_mesh_ << '\n'
