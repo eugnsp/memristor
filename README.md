@@ -1,3 +1,4 @@
 # Memristor model
 
-Simple model of memristor based on self-consistent solution of Poisson equation, heat equation and kinetic Monte-Carlo O-vacancies dynamics.
+Simple model of a memristor based on Poisson equation, heat equation and kinetic 
+Monte-Carlo O-vacancies dynamics. See [model.pdf](doc/model.pdf) for some details.
