@@ -1,18 +1,19 @@
 #pragma once
 #include <es_util/phys.hpp>
 
-// TODO : move into params
-enum Mesh_tags : unsigned int
-{
-	DIELECTRIC = 1,
-	METALLIC_GERM = 2,
-	GRANULE = 3,
-	CONTACT = 4
-};
-
 namespace params
 {
 using namespace es_util::au::literals;
+
+// Physical tags of mesh elements; the values should agree
+// with those defined in the .geo/.msh mesh files
+enum Tags : unsigned int
+{
+	DIELECTRIC = 1,
+	TIP = 2,
+	GRANULE = 3,
+	CONTACT = 4
+};
 
 //////////////////////////////////////////////////////////////////////
 /** Monte-Carlo simulation */

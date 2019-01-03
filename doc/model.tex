@@ -6,7 +6,6 @@
 \usepackage{amssymb}
 \usepackage{hyperref}
 \usepackage{tikz}
-\usetikzlibrary{arrows,decorations.pathmorphing,decorations.markings,backgrounds,positioning,fit,topaths,shapes,patterns,calc}
 
 \newcommand{\dd}{\mathrm{d}}
 
@@ -21,39 +20,102 @@
 \title{Memristor mathematical model, ver. 1.0}
 \author{https://github.com/eugnsp/memristor}
 \maketitle
+\tableofcontents
 
 % ================================================================================
-\section*{Equations, their discretization and algorithms}
+\section{Introduction}
 
-Note: in what follows atomic units are used.
+This is a succinct formal description of equations, their discretization and
+algorithms used for memristor modelling. Gauss units are used in equations and
+atomic units are used in the code.
 
-% --------------------------------------------------------------------------------
-\section*{Heat equation}
+We assume the system to be cylindrically symmetric. 2D finite element schemes
+are employed for the Poisson and the heat equations. A 3D grid is used for
+the Monte-Carlo simulation of O-vacancies motion with subsequent averaging
+over the polar angle.
+
+The geometry of the system is shown in fig.~\ref{fig:system_geometry}. The
+geometry is defined in an external mesh file. Numerical physical tags in the mesh
+file are used to discern different regions.
+
+\begin{figure}[!ht]
+	\centering
+	\begin{tikzpicture}
+		\foreach \x in {0, .25, ..., 5}	\foreach \y in {0, .25, ..., 7}
+		\draw[red] (\x, \y) circle (.04);
+
+		\path[fill=white] (-.1, -.1) -- ++(.9, 0) -- ++(0, 1.7) -- ++(-.9, 0);
+		\path[fill=white] (-.1, 2.9) -- ++(.2, 0) -- ++(0, .2) -- ++(.5, 0) --
+			++(0, .5) -- ++(.3, 0) -- ++ (0, 1.3) -- ++(-.3, 0) -- ++(0, .5) --
+			++(-.45, 0) -- ++(0, .2) -- ++(-.3, 0);
+
+		\draw (.38, 4.25) node[fill=white] {$\Omega_G$};
+		\draw (.38, .75) node {$\Omega_T$};
+		\draw (.38, 7.5) node[fill=white] {$\Omega_C$};
+		\draw (2.5, 5.5) node[fill=white] {$\Omega_D$};
+
+		\draw[very thick] (0, 0) -- ++(5, 0) -- ++(0, 8) -- ++(-5, 0) -- cycle;
+		\draw[very thick] (.75, 0) -- ++(0, 1.5) -- ++(-.75, 0);
+		\draw[very thick] (0, 7) -- ++(5, 0);
+
+		\draw[very thick] (0, 3) arc[start angle = -90, end angle= 90,
+				x radius=.85, y radius=1.25];
+
+		\draw[->,thick,dashed] (5, 0) -- ++(.65, 0) node[below] {$r$};
+		\draw[->,thick,dashed] (0, 8) -- ++(0, .65) node[left] {$z$};
+
+		\draw (0, 0) node[left] {$0$};
+		\draw (0, 7) node[left] {$h_s$};
+		\draw (5, 0) node[below] {$r_s$};
+
+		\draw (5, 4) node[right] {$T = T_0$};
+		\draw (5, 3.5) node[right] {$\phi_n = 0$};
+
+		\draw (0, 4) node[left] {$T_n = 0$};
+		\draw (0, 3.5) node[left] {$\phi = \phi_c(z)$};
+
+		\draw (2.5, 0) node[below] {$T = T_0, \, \phi = 0$};
+		\draw (2.5, 8) node[above] {$T = T_0$};
+		\draw (2.5, 7) node[above] {$\phi = -eV$};
+	\end{tikzpicture}
+	\caption{Geometry of the system ($\Omega_T$~--- metallic tip, $\Omega_G$~---
+		metallic granule(s), $\Omega_C$~--- top contact, $\Omega_D$~--- dielectic
+		matrix), and boundary conditions. The projection of the Monte-Carlo 3D
+		grid onto the ($\phi = 0$)-plane is shown with red circles.}
+	\label{fig:system_geometry}
+\end{figure}
+
+% ================================================================================
+\section{Heat equation}
 
 The heat equation for the lattice temperature~$T(\vx)$ is
 \begin{equation}
--\nabla \cdot [ c(\vx) \nabla T(\vx) ] = s(\vx),
+	-\nabla \cdot [ c(\vx) \nabla T(\vx) ] = s(\vx),
 \end{equation}
 where $c(\vx)$ is the thermal conductivity, and $s(\vx)$ is the volume heat
-density of the source.
-
-In the cylindrical coordinates this equation for~$T(\vx) = T(r, z)$ takes the form:
+density of the source. The equation is solved in the whole area
 \begin{equation}
-\label{eq:heat_equation_rz}
-- \frac{\partial}{\partial r} \left[ c(r, z) \frac{\partial T}{\partial r} \right]
-- \frac{c(r, z)}{r} \frac{\partial T}{\partial r}
-- \frac{\partial}{\partial z} \left[ c(r, z) \frac{\partial T}{\partial z} \right]
-= s(r, z).
+	\Omega_H = \Omega_D \cup \Omega_G \cup \Omega_T \cup \Omega_C.
+\end{equation}
+
+In the cylindrical coordinates this equation for~$T(\vx) = T(r, z)$ takes
+the form:
+\begin{equation}
+	\label{eq:heat_equation_rz}
+	- \frac{\partial}{\partial r} \left[ c(r, z) \frac{\partial T}{\partial r} \right]
+	- \frac{c(r, z)}{r} \frac{\partial T}{\partial r}
+	- \frac{\partial}{\partial z} \left[ c(r, z) \frac{\partial T}{\partial z} \right]
+	= s(r, z).
 \end{equation}
 
 The structure of the heat source term is
 \begin{equation}
-s(r, z) = \frac{\theta [ r_0(z) - r ]}{\pi r_0(z)^2} s(z),
+	s(r, z) = \frac{\theta [ r_0(z) - r ]}{\pi r_0(z)^2} s(z),
 \end{equation}
 where $r_0(z)$~is the source radius, and $s(z)$~is its linear density. It is
 tempting to approximate the source with a delta-functional one
 \begin{equation}
-s(r, z) = \delta (\pi r^2) s(z) = \frac{\delta(r)}{2\pi r} s(z).
+	s(r, z) = \delta (\pi r^2) s(z) = \frac{\delta(r)}{2\pi r} s(z).
 \end{equation}
 However, the solution of~\eqref{eq:heat_equation_rz} is singular at~$r = 0$:
 $T(r) \sim \ln(r)$. Hence, finite~$r_0$ should be retained. For simplicity we
@@ -61,174 +123,169 @@ assume $r_0 := \{ \mathsf{heat\_source\_radius} \}$ to be independent of~$z$.
 Due to the logarithmic divergence the solution is very sensitive to the value
 of $r_0$ for $r < r_0$.
 
-The heat is produced due to the Joule heating:
-\begin{equation}
-\label{eq:heat_joule_source}
-s(z) = I^2 r_c(z),
-\end{equation}
-where $I$ is the total current, and $r_c(z)$ is the linear resistivity of the core.
-
 The thermal conductivity is assumed to be uniform in the whole system:
 \begin{equation}
-c(r, z) = c := \{ \mathsf{thermal\_conductivity} \}.
+	c(r, z) = c := \{ \mathsf{thermal\_conductivity} \}.
 \end{equation}
 
-% ................................................................................
-\subsection*{Boundary conditions}
+% --------------------------------------------------------------------------------
+\subsection{Boundary conditions}
 
 The uniform Dirichlet boundary condition is assumed at the outer surface:
 \begin{equation}
-T(\vx)\vert_\Gamma = T_0 := \{ \mathsf{temperature} \}.
+	T(\vx)\vert_{\Gamma_1} = T_0 := \{ \mathsf{temperature} \}, \quad
+	\Gamma_1 = \partial \Omega_H \setminus \{ r = 0 \}.
 \end{equation}
 
 This condition translates into the following condition in the cylindrical
 coordinates:
 \begin{equation}
-T(r, z)\vert_\Gamma = T_0.
+	T(r, z)\vert_{\Gamma_1} = T_0.
 \end{equation}
 along with the compatibility condition at $r = 0$
 \begin{equation}
-\label{eq:temp_compatibility_bc}
-\frac{\partial T(r, z)}{\partial r} \bigg\vert_{\Gamma_0} = 0, \quad
+	\label{eq:temp_compatibility_bc}
+	\frac{\partial T(r, z)}{\partial r} \bigg\vert_{\Gamma_2} = 0, \quad
+	\Gamma_2 = \partial \Omega_H \cap \{ r = 0 \}.
 \end{equation}
 
-% ................................................................................
-\subsection*{Discretization}
+% --------------------------------------------------------------------------------
+\subsection{Discretization}
 
 Multiplying eq.~\eqref{eq:heat_equation_rz} by~$r$, we obtain
 \begin{equation}
-- r \nabla \cdot ( c \nabla T ) - c \frac{\partial T}{\partial r}
-= \frac{I^2}{\pi r_0^2} \theta(r_0 - r) r_c, \quad
-\nabla = (\partial_r, \partial_z).
+	- r \nabla \cdot ( c \nabla T ) - c \frac{\partial T}{\partial r}
+	= \frac{I^2}{\pi r_0^2} \theta(r_0 - r) r_c, \quad
+	\nabla = (\partial_r, \partial_z).
 \end{equation}
 
-After multiplication by a test function~$\chi(r, z)$ and integration by parts
-we get
+After multiplication by a test function~$\chi(r, z)$ and integration
+by parts we get
 \begin{multline}
-- \int_\Omega r \chi \nabla \cdot ( c \nabla T )
-- \int_\Omega \chi c \frac{\partial T}{\partial r}
-%
-= \int_\Omega c [ \nabla ( r \chi ) \cdot \nabla T ]
-- \int_\Gamma r \chi c [ \nabla T \cdot \hat{\vn} ]
-- \int_\Omega \chi c \frac{\partial T}{\partial r} = \\
-%
-= \int_\Omega r c [ \nabla \chi \cdot \nabla T ]
-- \int_\Gamma r \chi c [ \nabla T \cdot \hat\vn ]
-%
-= \frac{I^2}{\pi r_0^2} \int_\Omega r \chi \theta(r_0 - r) r_c.
+	- \int_{\Omega_H} r \chi \nabla \cdot ( c \nabla T )
+	- \int_{\Omega_H} \chi c \frac{\partial T}{\partial r} = \\
+	%
+	= \int_{\Omega_H} c [ \nabla ( r \chi ) \cdot \nabla T ]
+	- \int_{\partial\Omega_H} r \chi c [ \nabla T \cdot \hat{\vn} ]
+	- \int_{\Omega_H} \chi c \frac{\partial T}{\partial r} = \\
+	%
+	= \int_{\Omega_H} r c [ \nabla \chi \cdot \nabla T ]
+	- \int_{\partial\Omega_H} r \chi c [ \nabla T \cdot \hat\vn ]
+	%
+	= \frac{I^2}{\pi r_0^2} \int_{\Omega_H} r \chi \theta(r_0 - r) r_c.
 \end{multline}
 
-The space of test functions is chosen such that $\chi$ vanishs at the Diriclet
-boundary. Then due to the compatibility condition~\eqref{eq:temp_compatibility_bc}
-the boundary term drops out:
+The space of test functions is chosen such that $\chi$ vanishs at the
+Diriclet boundary. Then due to the compatibility
+condition~\eqref{eq:temp_compatibility_bc} the boundary term drops out:
 \begin{equation}
-\int_\Omega r c [ \nabla \chi \cdot \nabla T ]
-= \frac{I^2}{\pi r_0^2} \int_\Omega r \chi \theta(r_0 - r) r_c.
+	\int_{\Omega_H} r c [ \nabla \chi \cdot \nabla T ]
+	= \frac{I^2}{\pi r_0^2} \int_{\Omega_H} r \chi \theta(r_0 - r) r_c.
 \end{equation}
 
 To account for non-zero Dirichlet boundary conditions, we make a substitution
 $T \to T + T_b$, where $T$ now has zero boundary conditions, and $T_b$ is an
 arbitrary function such that $T_b |_\Gamma = T_0$:
 \begin{equation}
-\int_\Omega r c [ \nabla \chi \cdot \nabla T ]
-= \frac{I^2}{\pi r_0^2} \int_\Omega r \chi \theta(r_0 - r) r_c
-- \int_\Omega r c [ \nabla \chi \cdot \nabla T_b ]
+	\int_{\Omega_H} r c [ \nabla \chi \cdot \nabla T ]
+	= \frac{I^2}{\pi r_0^2} \int_{\Omega_H} r \chi \theta(r_0 - r) r_c
+	- \int_{\Omega_H} r c [ \nabla \chi \cdot \nabla T_b ]
 \end{equation}
 
-Expanding $T = \sum_j T_j \chi_j$ over basis functions~$\chi_i$ and using the
-Galerkin's method, we get the discrete system for the $T_j$ coefficients:
+Expanding $T = \sum_j T_j \chi_j$ over basis functions~$\chi_i$ and using
+the Galerkin's method, we get the discrete system for the $T_j$ coefficients:
 \begin{equation}
-\sum_j S_{ij} T_j = b_i,
+	\sum_j S_{ij} T_j = b_i,
 \end{equation}
 where
 \begin{equation}
-S_{ij} = \int_\Omega r c [ \nabla\chi_i \cdot \nabla\chi_j ], \quad
-%
-b_i = \frac{I^2}{\pi r_0^2} \int_\Omega r \chi_i \theta(r_0 - r) r_c
-- \int_\Omega r c [ \nabla\chi_i \cdot \nabla T_b ].
+	S_{ij} = \int_{\Omega_H} r c [ \nabla\chi_i \cdot \nabla\chi_j ], \quad
+	%
+	b_i = \frac{I^2}{\pi r_0^2} \int_{\Omega_H} r \chi_i \theta(r_0 - r) r_c
+	- \int_{\Omega_H} r c [ \nabla\chi_i \cdot \nabla T_b ].
 \end{equation}
 
-% --------------------------------------------------------------------------------
-\section*{Poisson's equation}
+% ================================================================================
+\section{Poisson's equation}
 
 The Poisson's (Laplace's) equation for the electrostatic potential~$\phi(\vx)$
 with zero charge density is
 \begin{equation}
-\nabla[ \epsilon(\vx) \nabla \phi(\vx) ] = 0.
+	\nabla[ \epsilon(\vx) \nabla \phi(\vx) ] = 0,
 \end{equation}
+where $\epsilon(\vx)$ is the dielectric permittivity.
 
-\textbf{Boundary conditions}
-
-\begin{figure}[!h]
-\centering
-\begin{tikzpicture}
-	\draw[very thick] (0, 0) ellipse [x radius = 4, y radius = 1];
-	\draw[very thick] (0, 8) ellipse [x radius = 4, y radius = 1];
-	\draw[very thick] (-4, 0) -- (-4, 8);
-	\draw[very thick] (4, 0) -- (4, 8);
-
-	\draw[very thick] (0, 0) ellipse [x radius = 1, y radius = .25];
-	\draw[very thick] (0, 8) ellipse [x radius = 1, y radius = .25];
-	\draw[very thick] (0, 2) ellipse [x radius = 1, y radius = .25];
-	\draw[very thick] (-1, 0) -- (-1, 8);
-	\draw[very thick] (1, 0) -- (1, 8);
-
-	\draw[->,thick,dashed] (-5.7, 0) -- (4.5, 0) node[below] {$x$};
-	\draw[thick,dashed] (-5, 2) -- (1, 2);
-	\draw[thick,dashed] (-5.7, 8) -- (4, 8);
-
-	\draw[<->,thick,dashed] (-5.5, 0) -- (-5.5, 8) node[midway,left] {$h$};
-	\draw[<->,thick,dashed] (-4.7, 0) -- (-4.7, 2) node[midway,left] {$h_c$};
-
-	\draw[->,thick,dashed] (0, -2) -- (0, 9.5) node[left] {$z$};
-	\draw[thick,dashed] (-4, 0) -- (-4, -2);
-	\draw[thick,dashed] (1, 0) -- (1, -2);
-
-	\draw[<->,thick,dashed] (-4, -1.8) -- (0, -1.8) node[midway,above] {$r$};
-	\draw[<->,thick,dashed] (0, -1.8) -- (1, -1.8) node[midway,above] {$r_c$};
-
-	\draw (2, -.5) node {$\Gamma_L$};
-	\draw (2, 8.5) node {$\Gamma_U$};
-	\draw (1.5, 1.6) node {$\Gamma_c$};
-	\draw (1.5, 5) node {$\Gamma_f$};
-	\draw (4.5, 5) node {$\Gamma_S$};
-
-	\draw[->,dashed] (-1, -.5) node[below,left] {$(0, 0)$} -- (-.1, -.08);
-
-\end{tikzpicture}
-\caption{Boundary conditions for the Poisson equation.}
-\end{figure}
-
-Dirichlet boundary conditions are used everywhere:
+The equation is solved in the area
 \begin{equation}
-\phi(\vx)\vert_{\Gamma_L \cup \Gamma_c} = 1, \quad \phi(\vx)\vert_{\Gamma_R} = 0, \quad
-\phi(\vx)\vert_{\Gamma_S} = 1 - \frac{z}{h}, \quad \phi(\vx)\vert_{\Gamma_f} = 1 - \frac{R(h_c, z)}{R(h_c, h)},
+	\Omega_P = \Omega_D \cup \Omega_G \cup \Omega_T.
 \end{equation}
-where $R(z_1, z_2)$ is the resistance of the filament between points $z_1$ and $z_2$.
 
-%At the side surface, $\partial\Omega_S$, zero Neumann boundary condition:
-%\begin{equation}
-%\partial_n \phi(\vx)\vert_{\partial\Omega_S} = E_n(\vx)\vert_{\partial\Omega_S} = 0.
-%\end{equation}
+For~$\phi(\vx) = \phi(r, z)$ this equation takes the form:
+\begin{equation}
+	\label{eq:poisson_equation_rz}
+	- \frac{\partial}{\partial r} \left[ \epsilon \frac{\partial \phi}{\partial r} \right]
+	- \frac{\epsilon}{r} \frac{\partial \phi}{\partial r}
+	- \frac{\partial}{\partial z} \left[ \epsilon \frac{\partial \phi}{\partial z} \right]
+	= 0.
+\end{equation}
 
-%These physical boundary conditions translate into the mathematical ones:
-%\begin{equation}
-%\phi(r, z)\vert_{z = 0} = \phi_S, \quad \phi(r, z)\vert_{z = h} = \phi_D, \quad \frac{\partial \phi(r, z)}{\partial r}\bigg\vert_{r = R} = 0.
-%\end{equation}
-
-%At $r = 0$ the following compatibility condition holds for any continuous function:
-%\begin{equation}
-%\frac{\partial \phi(r = R, z)}{\partial r}\bigg\vert_{r = 0} = 0.
-%\end{equation}
+Due to the vanishing charge density the absolute value of $\epsilon$ is not
+important. The following values are used:
+\begin{equation}
+	\epsilon(\vx) =
+		\begin{cases}
+			1, 		& \vx \in \Omega_D, \\
+			100,	& \vx \in \Omega_T \cup \Omega_G,
+		\end{cases}
+\end{equation}
+where $100$ is an arbitrary constant $\gg 1$ used to model a metallic region where
+the potential is constant.
 
 % --------------------------------------------------------------------------------
-\section*{Kinetic Monte-Carlo method}
+\subsection{Boundary conditions}
 
-The distribution of vacancies is described by the occupation numbers $v_\vi$,
-which can only be 0 (no vacancy) or 1 (single vacancy), with indices $\vi$
-defined on the discrete 3D uniform grid $\mathcal{G}$,
+Dirichlet boundary conditions are used at the contacts and along the core:
+\begin{gather}
+	\phi(\vx)\vert_{\Gamma_3} = 0, \quad
+	\Gamma_3 = \partial\Omega_P \cap \{ z = 0 \},\\
+	%
+	\phi(\vx)\vert_{\Gamma_4} = -eV, \quad
+	\Gamma_4 = \partial\Omega_P \cap \{ z = h_s \},\\
+	%
+	\phi(\vx)\vert_{\Gamma_5} = \phi_c(z),
+	\quad \Gamma_5 = \partial\Omega_P \cap \{ r = 0 \},
+\end{gather}
+where $V$ is the external bias voltage, and $\phi_c(z)$ is the potential along
+the core.
+
+At the outter boundary zero Neumann condition is used:
 \begin{equation}
-\mathcal{G} = \{ \vi = (i, j, k) \ | \ \vx_\vi \in \overline\Omega_D \},
+	\frac{\partial \phi}{\partial r} \bigg\vert_{\Gamma_6} = E_n = 0, \quad
+	\Gamma_6 = \partial \Omega_P \cap \{ r = r_s \}.
+\end{equation}
+
+% --------------------------------------------------------------------------------
+\subsection{Discretization}
+
+The Poisson equation has the same type as the heat equation, and its
+discretization follows the same lines. The result is:
+\begin{equation}
+	S_{ij} = \int_{\Omega_P} r [ \nabla\chi_i \cdot \nabla\chi_j ], \quad
+	%
+	b_i = - \int_{\Omega_P} r [ \nabla\chi_i \cdot \nabla \phi_b ],
+\end{equation}
+where $\phi_b$ is an arbitrary function that satisfies non-zero Dirichlet
+boundary conditions.
+
+% ================================================================================
+\section{Kinetic Monte-Carlo method}
+
+The distribution of vacancies is described by the occupation numbers~$v_\vi$,
+which can only be 0 (no vacancy) or 1 (single vacancy), with indices~$\vi$
+defined on the discrete 3D uniform grid~$\mathcal{G}$,
+\begin{equation}
+	\mathcal{G} = \{ \vi = (i, j, k) \ | \ \vx_\vi \in
+	\overline\Omega_D \setminus ( \overline\Omega_T \cup \overline\Omega_G ) \},
 \end{equation}
 where $\vx_\vi$ are the coordinates of the site~$\vi$. The grid spacing equals
 $\delta := \{ \mathsf{grid\_delta} \}$.
@@ -237,11 +294,11 @@ It is assumed that vacancies hop only between nearest-neighbour sites. Each site
 (except for boundary ones) has six nearest neighbours. The rate (probability per
 unit time) of hopping is
 \begin{equation}
-\Gamma_{\vi \to \vi'} = v_\vi (1 - v_{\vi'}) w_0
-\exp \left\{
+	\Gamma_{\vi \to \vi'} = v_\vi (1 - v_{\vi'}) w_0
+	\exp \left\{
 	-\frac{E_{\mathrm{ac}} + [U(\vx_{\vi'}) - U(\vx_\vi)]}
 	{T[(\vx_\vi + \vx_{\vi'}) / 2]}
-\right\}, \quad U(\vx) = q \phi(\vx),
+	\right\}, \quad U(\vx) = q \phi(\vx),
 \end{equation}
 where $w_0 := \{ \mathsf{debye\_frequency} \}$ is the Debye frequency, $T(\vx)$
 is the temperature, $\phi(\vx)$ is the electrostatic potential, and $q = e > 0$
@@ -249,185 +306,198 @@ is the O-vacancy charge. The pre-factor $v_\vi (1 - v_{\vi'})$ takes into accoun
 that the hopping is possible only if the source site is occupied ($v_\vi = 1$)
 and the destination one is empty ($v_{\vi'} = 0$).
 
-% ................................................................................
-\subsection*{Initial conditions}
+% --------------------------------------------------------------------------------
+\subsection{Initial conditions}
 
 Initially all vacancies are distributed uniformly randomly over~$\mathcal{G}$
-with the filling factor $\rho := \{ \mathsf{initial\_filling} \}$,
-$0 < \rho < 1$, such that the total number of vacancies is
-$\lfloor \rho N_{\mathcal{G}} \rfloor$, where $N_{\mathcal{G}}$ is the total
+with the filling factor $\xi := \{ \mathsf{initial\_filling} \}$,
+$0 < \xi < 1$, such that the total number of vacancies is
+$\lfloor \xi N_{\mathcal{G}} \rfloor$, where $N_{\mathcal{G}}$ is the total
 number of sites in~$\mathcal{G}$.
 
-% ................................................................................
-\subsection*{Boundary conditions}
+% --------------------------------------------------------------------------------
+\subsection{Boundary conditions}
 
-TODO. If the source or final cite lies outside the domain, the hopping probabilities are determined by the boundary conditions.
+If the source or final site lies outside the domain~$\Omega_D$, the hopping
+rates are determined by the boundary conditions. All boundaries except for
+\begin{equation}
+	\Gamma_M = \partial\Omega_D \cap \{ z = h_s \}
+\end{equation}
+are impenetrable, i.\,e. corresponding rates $\Gamma_{\vi\to\vi'}$ vanish.
 
-% ................................................................................
-\subsection*{Algorithm}
+% --------------------------------------------------------------------------------
+\subsection{Algorithm}
 
 Variable step size method is used for Monte-Carlo simulation. The following
-algorithm is used.
+algorithm is used:
 
 \begin{enumerate}
-\item \label{alg:monte_carlo_events} Identify all possible events and compute
-their rates $\Gamma_k = \Gamma_{\vi \to \vi'}$.
+	\item \label{alg:monte_carlo_events} Identify all possible events and compute
+	      their rates $\{ \Gamma_k = \Gamma_{\vi \to \vi'} \}$.
 
-\item Compute probabilities of all events: $P_k = \Gamma_k / \Gamma$, where
-$\Gamma = \sum_k \Gamma_k$ is the total rate. Select the next event randomly
-according to this probability distribution.
+	\item \label{alg:monte_carlo_next} Compute probabilities of all events:
+		  $\{ P_k = \Gamma_k / \Gamma \}$, where $\Gamma = \sum_k \Gamma_k$ is the
+		  total rate. Select the next event index~$n$ randomly according to this
+		  probability distribution: take a uniform random number $v$ in the
+		  range~$(0, 1)$ and find the smallest~$n$ such that
+		  $\sum_k^n \Gamma_k \geq v\Gamma$.
 
-\item Compute the time step: $\Delta t_i = -\ln u / \Gamma$, where where $u$
-is a uniform random number in the range~$(0, 1)$.
+	\item Compute the time step: $\Delta t_i = -\ln u / \Gamma$, where where $u$
+	      is a uniform random number (independent of $v$) in the range~$(0, 1)$.
 
-\item Check if the total simulation duration $\Delta t = \sum_i \Delta t_i$
-and/or the number of steps exceed the given limits. Abort, if they do.
+	\item Check if the total simulation duration $\Delta t = \sum_i \Delta t_i$
+		  and/or the number of steps exceed the given limits. \underline{Abort},
+		  if they do.
 
-\item Go to step \ref{alg:monte_carlo_events}.
+	\item \underline{Go to} step \ref{alg:monte_carlo_events}.
 \end{enumerate}
 
-%Next event is chosen from
+Fenwick tree data structure is used for fast determination of the next event
+index in the step~\ref{alg:monte_carlo_next}.
 
-% \subsection{Electric Conductivity}
-% \label{sec:ElectricConductivity}
+% ================================================================================
+\section{Core resistance, potential and heat source}
 
-% Electric conductivity of the filamentary media, as well as the same of the rest of the dielectric media with the vacancies are to be discussed.
+If the core has linear resistivity~$r_c(z)$, then the potential along the core
+and the linear heat density due to the Joule heating are:
+\begin{equation}
+	\phi_c(z) = -e I \int_0^z \dd z'\, r_c(z'), \quad
+	s(z) = I^2 r_c(z),
+\end{equation}
+where $I$ is the total current:
+\begin{equation}
+	I = \frac{V}{R}, \quad R = \int_0^{h_s} \dd z\, r_c(z).
+\end{equation}
 
-% For the metallic granule the value of $\sigma_G = 10^7$ (1/(Ohm*m) is taken.
+To compute the linear resistivity, we assume that the core is separated into
+sections of three types: (1)~metallic tip and granule(s) with zero resistivity;
+(2)~grain boundary with linear resistivity
+$r_g := \{ \mathsf{grain\_bnd\_resistivity} \}$ independent of~$z$, if no
+filament is formed at $z$; (3)~filament with linear resistivity
+\begin{equation}
+	r_f(z) = \frac{\rho_0}{\pi R_f^2(z)},
+\end{equation}
+where $\rho_0 := \{ \mathsf{filament\_resistivity} \}$ is the filament volume
+resistivity, $R_f(z)$ is its radius.
 
-% \subsection{Heat source}
+After discretization, the linear resistivity~$r_c(z)$ is represented by $r_c(z_i)$
+at the points $z_i = i \delta$. If $z_i \in \overline\Omega_T \cup
+	\overline\Omega_G$, then $r_c(z_i) = 0$. Otherwise $r_c(z_i)$ depends on whether
+the filament is formed at $z = z_i$ or not.
 
-% \begin{figure}[!h]
-% \centering
-% \begin{tikzpicture}
-% 	\draw[very thick] (0, 0) ellipse [x radius = 4, y radius = 1];
-% 	\draw[very thick] (0, 11) ellipse [x radius = 4, y radius = 1];
-% 	\draw[very thick] (-4, 0) -- (-4, 11);
-% 	\draw[very thick] (4, 0) -- (4, 11);
+We assume that the filament has radial symmetry. Its shape is described by the
+filament radius function~$R_f(z)$. It is defined as follows:
+\begin{equation}
+	R(z_i) = \max_{\substack{r \geq r_{\min}, \\ N_f(r)/N(r) \geq \xi}} r,
+\end{equation}
+where $N_f(r)$ ($N(r)$) is the number of filled (total) sites $\{ j \}$
+in the grid~$\mathcal{G}$ that have coordinates $(x_j^2 + y_j^2 \leq r^2, z_j = z_i)$,
+$\xi := \{ \mathsf{filament\_filling\_threshold} \}$ is the filling threshold, and
+$r_{\min} > 0$ is the minimal filament radius. If no such max exists, it is assumed
+that no filament is formed at $z = z_i$.
 
-% 	\draw[very thick] (0, 8) ellipse [x radius = 1, y radius = .25];
-% 	\draw[very thick] (0, 2) ellipse [x radius = 1, y radius = .25];
-% 	\draw[very thick] (-1, 2) -- (-1, 8);
-% 	\draw[very thick] (1, 2) -- (1, 8);
+Numerically, max in the definition above is sought for over a discrete set of
+radii $\{ n\delta \ | \ n \in \mathbb{Z} \}$ using simple linear search. Minimal
+radius is given by $r_{\min} = n_{\min} \delta$ with
+$n_{\min} := \{ \mathsf{min\_filament\_radius} \}$.
 
-% 	\draw[thick,dashed] (-5.7, 0) -- (4, 0);
-% 	\draw[thick,dashed] (-5, 2) -- (1, 2);
-% 	\draw[thick,dashed] (-5.7, 8) -- (1, 8);
-% 	\draw[thick,dashed] (-5.7, 11) -- (4, 11);
+\begin{figure}[!h]
+	\centering
+	\begin{tikzpicture}
+		\foreach \x in {1, 3, ..., 11}
+		\draw[red] (\x, 0) circle (.1);
 
-% 	\draw[<->,thick,dashed] (-5.5, 0) -- (-5.5, 8) node[midway,left] {$h$};
-% 	\draw[<->,thick,dashed] (-4.7, 0) -- (-4.7, 2) node[midway,left] {$h_c$};
-% 	\draw[<->,thick,dashed] (-5.5, 8) -- (-5.5, 11) node[midway,left] {$h_t$};
+		\foreach \x in {1, 2, 4, ..., 10, 11}
+			{
+				\draw[xshift=\x cm, blue] (-.1, -.1) -- (.1, .1);
+				\draw[xshift=\x cm, blue] (-.1, .1) -- (.1, -.1);
+			}
 
-% 	\draw[thick,dashed] (0, 12) -- (0, -2);
-% 	\draw[thick,dashed] (-4, 0) -- (-4, -2);
-% 	\draw[thick,dashed] (1, 2) -- (1, -2);
+		\draw (1, .1) node[above] {$z_0$};
+		\draw (3, .1) node[above] {$z_1$};
+		\draw (6, .1) node[above] {$\cdots$};
+		\draw (9, .1) node[above] {$z_{N - 2}$};
+		\draw (11, .1) node[above] {$z_{N - 1}$};
 
-% 	\draw[<->,thick,dashed] (-4, -1.8) -- (0, -1.8) node[midway,above] {$r$};
-% 	\draw[<->,thick,dashed] (0, -1.8) -- (1, -1.8) node[midway,above] {$r_c$};
+		\draw (1, -.1) node[below] {$\phi_0$};
+		\draw (1, -.5) node[below] {$=0$};
+		\draw (2, -.1) node[below] {$\phi_1$};
+		\draw (4, -.1) node[below] {$\phi_2$};
+		\draw (6, -.1) node[below] {$\cdots$};
+		\draw (10, -.1) node[below] {$\phi_{N - 1}$};
+		\draw (11, -.1) node[below] {$\phi_{N}$};
+		\draw (11, -.5) node[below] {$= -eV$};
 
-% 	\draw (0.5, 5) node {$s(\vx)$};
+		\draw[->,thick,dashed] (.3, 0) -- (11.7, 0) node[below] {$z$};
 
-% \end{tikzpicture}
-% \caption{Heat source for the heat equation.}
-% \end{figure}
+	\end{tikzpicture}
+	\caption{Discretization of the core potential $\phi_i = \phi(z_{i - 1/2})$;
+	$\phi_0$ and $\phi_N$ are special and hold boundary conditions.}
+	\label{fig:core_potential}
+\end{figure}
 
-% The heat source~$s(\vx)$ is given by
-% \begin{equation}
-% s(\vx) = \begin{cases}
-% P(z), & x^2 + y^2 \leq R_f(z)\ \text{and}\ h_c < z < h, \\
-% 0, & \text{otherwise},
-% \end{cases}
-% \end{equation}
-% where $P(z)$ is Joule heat source and $R_f(z)$ is the filament radius.
+The discretized core potential is defined at $z_0 = 0$, $z_{N-1} = h_s$
+and the mid-points $z_{i + 1/2} = (z_i + z_{i + 1}) / 2$, see
+fig.~\ref{fig:core_potential}:
+\begin{equation}
+	\begin{split}
+		\phi_0 & = 0, \\
+		\phi_1 & = \phi(z_{1/2}) = -eI \frac{r_c(z_0) \delta}{2}, \\
+		\phi_2 & = \phi(z_{3/2}) = -eI \left[ \frac{r_c(z_0)}{2} +
+			r_c(z_1) \right] \delta, \\
+		\cdots \\
+		\phi_N & = \phi(z_{N - 1}) = -eIR = -eV.
+	\end{split}
+\end{equation}
+where the total resistance~$R$ is:
+\begin{equation}
+	R = \left[ \frac{r_c(z_0)}{2} + r_c(z_1) + \cdots + r_c(z_{N - 2}) +
+	\frac{r_c(z_{N - 1})}{2} \right] \delta.
+\end{equation}
 
-% \section{Calculation of resistance}
-
-% Firstly, one calculates the coordinate of the end of the filament ($z_2$) and its radia (as function of $z$).
-
-% The radia array $r(z)$ is calculated as the following.
-% For every taken $z$ one calculates the fraction of nodes, occupied by the vacancies, in the layer (excluding the nodes, occupied by the granules).
-% If the fraction is larger, than some value $x_c$ (here $x_c=0.25$), then the radius is increased by one lattice period, (i.e. $r(i+1)$ = $r(i)$ + $a$,
-% where $a$ is the lattice period?)(-V.)and the calculation is repeated. That is done, until calculated fraction is smaller, than $x_c$, twice during the
-% calculation
-
-% The length of the filament is calculated from the coordinate of the beginning of the filament $z_1$ (here $z_1=30$ layers $=30a$). $z_2$ is the coordinate just before the second zero $r(z)$ since $z_1$ (i.e., a single gap in the filament is allowed). (The same difficulty, concerning $L_v >a$, as above)(V.)
-
-% Then one calculates the resistance layer by layer.
-% If there is granule in the layer $z_i$, then its resistance is taken as
-% \begin{equation}
-% R_{\text{gran}}(z_i)=\rho_{\text{gran}}\frac{\delta z}{S_{\text{gran}}(z_i)},
-% \end{equation}
-% where $\rho_{\text{gran}}=0.096$ $\Omega$*mm$^2$/m is the granule material resistivity, $\delta z=a=0.25$ nm is the width of the layer, and $S=\pi r_{\text{gran}}^2(z_i)$ is the actual filament area. If there is also filament in the layer, its resistance is
-% \begin{equation}
-% R_{\text{fil}}(z_i)=\rho_{\text{fil}}\left(1+\frac{\alpha}{2(r_{\text{fil}}-r_{\text{gran}})}\right)\frac{\delta z}{S_{\text{fil}}(z_i)},
-% \end{equation}
-
-% \begin{equation}
-% 	R_{\text{fil}}(z_i)=\rho_{\text{fil}}\frac{\delta z}{S_{\text{fil}}(z_i)[1-(r_{\text{gran}}/r_{\text{fil}})^2]}
-% \end{equation}
-% where $\rho_{\text{fil}}=2.4\times10^{-2}$ $\Omega$*mm$^2$/m, $\alpha=10.5$ nm.
-% Then the total resistance is
-% \begin{equation}
-% R(z_i)=\frac{R_{\text{fil}}R_{\text{gran}}}{R_{\text{fil}}+R_{\text{gran}}}.
-% \end{equation}
-
-% If there is no filament and granule, the resistance is taken as:
-% \begin{equation}
-% R(z_i)=\delta z\times10^7\times5\times10^{-4}/\pi,
-% \end{equation}
-% where $\delta z$ is taken in nm.
-
-% Finally, the resistance of the element is just
-% \begin{equation}
-% R=\sum_i R(z_i).
-% \end{equation}
 
 % --------------------------------------------------------------------------------
-\section*{Resistance and potential distribution}
+%\section*{Interpolation between meshes}
 
-% --------------------------------------------------------------------------------
-\section*{Interpolation between meshes}
-
-% --------------------------------------------------------------------------------
-\section*{Device simulation algorithm}
+% ================================================================================
+\section{Device simulation algorithm}
 
 The device simulation proceeds according to the following algorithm:
 
 \begin{enumerate}
-\item \textbf{Initialization.} Read the mesh for the heat equations from the
-external file; create the mesh for the Poisson equation; initialize the
-finite-element solvers; initialize the Monte-Carlo solver; generate the initial
-distribution of O-vacancies.
+	\item \textbf{Initialization.} Read the mesh for the heat equations from the
+	      external file; create the mesh for the Poisson equation; initialize the
+	      finite-element solvers; initialize the Monte-Carlo solver; generate the
+	      initial distribution of O-vacancies.
 
-\item Set bias voltage to zero: $V \gets 0$; set bias voltage sweep direction to
-``forward'': $\xi \gets +1$.
+	\item Set bias voltage to zero: $V \gets 0$; set bias voltage sweep direction
+	      to ``forward'': $\xi \gets +1$.
 
-\item \label{alg:main_compute_shape} \textbf{Main loop.} Compute the filament
-shape.
+	\item \label{alg:main_compute_shape} \textbf{Main loop.} Compute the filament
+	      shape.
 
-\item Compute the linear resistance $r_c(z)$; compute
-the total current~$I$; compute the linear heat source density $I^2 r_c(z)$;
-compute the Poisson equation boundary condition $\phi(0, z)$.
+	\item Compute the linear resistance $r_c(z)$; compute
+	      the total current~$I$; compute the linear heat source density $I^2 r_c(z)$;
+	      compute the Poisson equation boundary condition $\phi(0, z)$.
 
-\item Solve the heat equation for $T(r, z)$; solve the Poisson equation for
-$\phi(r, z)$; interpolate to the Monte-Carlo grid to obtain $T(\vx_i)$ and
-$\phi(\vx_i)$.
+	\item Solve the heat equation for $T(r, z)$; solve the Poisson equation for
+	      $\phi(r, z)$; interpolate to the Monte-Carlo grid to obtain $T(\vx_i)$
+	      and $\phi(\vx_i)$.
 
-\item Estimate the duration $\langle \Delta t \rangle$ of a single Monte-Carlo
-step. If it is larger than the minimum Monte-Carlo step duration
-$\langle \Delta t \rangle_{\min} := \{ \mathsf{min\_step\_duration} \}$, set
-time step: $\Delta t \gets \overline{\Delta t}_{\min}$, and go to step
-\ref{alg:main_update_bias} (skip Monte-Carlo simulation).
+	\item Estimate the duration $\langle \Delta t \rangle$ of a single Monte-Carlo
+	      step. If it is larger than the minimum Monte-Carlo step duration
+	      $\langle \Delta t \rangle_{\min} := \{ \mathsf{min\_step\_duration} \}$,
+	      set time step: $\Delta t \gets \overline{\Delta t}_{\min}$, and go to
+	      step \ref{alg:main_update_bias} (skip Monte-Carlo simulation).
 
-\item Run the Monte-Carlo simulation for $n := \{ \mathsf{steps\_per\_round} \}$
-steps; compute the elapsed time $\Delta t$.
+	\item Run the Monte-Carlo simulation for $n := \{ \mathsf{steps\_per\_round} \}$
+	      steps; compute the elapsed time $\Delta t$.
 
-\item \label{alg:main_update_bias} Update bias voltage:
-$V \gets V + \xi s \Delta t$, where $s := \{ \mathsf{bias\_sweep\_rate} \}$
-is the bias voltage sweep rate.
+	\item \label{alg:main_update_bias} Update bias voltage:
+	      $V \gets V + \xi s \Delta t$, where $s := \{ \mathsf{bias\_sweep\_rate} \}$
+	      is the bias voltage sweep rate.
 
-\item Go to step \ref{alg:main_compute_shape}.
+	\item Go to step \ref{alg:main_compute_shape}.
 \end{enumerate}
 
 

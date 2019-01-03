@@ -22,11 +22,6 @@ if (NOT TARGET es_la)
 endif()
 target_link_libraries(memristor PRIVATE es_la)
 
-if (NOT TARGET es_geom)
-	add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/es_geom")
-endif()
-target_link_libraries(memristor PRIVATE es_geom)
-
 if (NOT TARGET es_fe)
 	add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/external/es_fe")
 endif()

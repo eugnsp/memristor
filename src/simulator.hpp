@@ -1,30 +1,22 @@
 #pragma once
 #include "params.hpp"
-#include "poisson/solver.hpp"
-#include "heat/solver.hpp"
-#include "resistance.hpp"
-#include "monte_carlo/interpolate.hpp"
-#include "monte_carlo/monte_carlo.hpp"
+#include "poisson_solver.hpp"
+#include "heat_solver.hpp"
+#include "interpolate.hpp"
+#include "monte_carlo.hpp"
 
 #include <es_la/dense.hpp>
 #include <es_la/io/matfile_writer.hpp>
-#include <es_fe/io/vtk_writer.hpp>
 #include <es_fe/mesh/mesh2.hpp>
-#include <es_geom/algorithm.hpp>
-#include <es_geom/compare.hpp>
 #include <es_util/phys.hpp>
 #include <es_util/numeric.hpp>
 
-#include <array>
 #include <cassert>
 #include <cmath>
 #include <iostream>
 #include <iomanip>
 #include <limits>
-#include <memory>
 #include <numeric>
-
-#include <es_fe/io/vtk_writer.hpp>
 
 class Simulator
 {
@@ -36,10 +28,10 @@ public:
 		// Step 1
 		init();
 
-		heat::Solver heat_solver{heat_mesh_, heat_tags_, core_heat_};
+		Heat_solver heat_solver{heat_mesh_, heat_tags_, core_heat_};
 		heat_solver.init();
 
-		poisson::Solver poisson_solver{poisson_mesh_, poisson_tags_, core_potential_};
+		Poisson_solver poisson_solver{poisson_mesh_, poisson_tags_, core_potential_};
 		poisson_solver.init();
 
 		mc_.init_uniform(params::initial_filling);
@@ -53,6 +45,8 @@ public:
 			return mc_rate_fn(from, to);
 		};
 
+		std::vector<unsigned int> fil_shape(grid_size_z_);
+
 		std::vector<double> biases;
 		std::vector<double> currents;
 
@@ -61,7 +55,8 @@ public:
 		std::cout << "#    Time      Fil.size  Bias      Current   MC est.      MC act.\n"
 				  << "     [msec]    [layers]  [V]       [uA]      [usec/step]  [steps]\n"
 				  << "-----------------------------------------------------------------"
-				  << std::endl << std::setprecision(3);
+				  << std::endl
+				  << std::setprecision(3);
 
 		while (true)
 		{
@@ -69,12 +64,12 @@ public:
 					  << es_util::au::to_sec(time) * 1e3 << ' ' << std::flush;
 
 			// Step 3
-			const auto fil_shape = filament_shape(mc_);
-			const auto fil_size = std::count_if(fil_shape.begin(), fil_shape.end(),
-												[](auto r) { return r > 0; });
+			compute_filament_shape(fil_shape);
+			const auto fil_size =
+				std::count_if(fil_shape.begin(), fil_shape.end(), [](auto r) { return r > 0; });
 
 			// Step 4
-			compute_potential_and_heating(fil_shape);
+			compute_potential_and_heat(fil_shape);
 			std::cout << std::setw(9) << fil_size << ' ' << std::setw(9)
 					  << es_util::au::to_volt(voltage_bias_) << ' ' << std::setw(9)
 					  << es_util::au::to_amp(current_) * 1e6 << ' ' << std::flush;
@@ -95,7 +90,9 @@ public:
 			if (est_step_duration < time_step)
 			{
 				// Step 7
-				const auto mc_res = mc_.run(sweep_direction ? params::steps_per_round : 10 * params::steps_per_round, time_step, rate_fn);
+				const auto mc_res = mc_.run(sweep_direction ? params::steps_per_round
+															: 10 * params::steps_per_round,
+											time_step, rate_fn);
 				time_step = mc_res.second;
 
 				std::cout << std::setw(9) << mc_res.first << std::endl;
@@ -132,7 +129,7 @@ public:
 				sweep_direction = false;
 
 			if (!sweep_direction && voltage_bias_ < 0)
-			 	break;
+				break;
 			//		 mc_.write("mc" + std::to_string(i) + ".mat");
 		}
 	}
@@ -143,24 +140,24 @@ private:
 
 	void find_forbidden_grid_regions()
 	{
-		is_metallic_region_.resize(grid_size_z_, false);
+		metallic_regions_.resize(grid_size_z_, false);
 
 		for (const auto& face : poisson_mesh_.faces())
 		{
 			const auto tag = poisson_tags_[**face];
-			if (tag != Mesh_tags::METALLIC_GERM && tag != Mesh_tags::GRANULE)
+			if (tag != params::Tags::TIP && tag != params::Tags::GRANULE)
 				continue;
 
-			const auto br = es_geom::bounding_rect(face);
+			const auto br = bounding_rect(face);
 
 			const auto z_min = static_cast<unsigned int>(
-				std::floor(std::max(0., (br.bottom() - es_geom::delta) / params::grid_spacing)));
-			const auto z_max = std::min(
-				grid_size_z_ - 1,
-				static_cast<unsigned int>(std::ceil((br.top() + es_geom::delta) / params::grid_spacing)));
+				std::floor(std::max(0., (br.bottom() - es_fe::delta) / params::grid_spacing)));
+			const auto z_max =
+				std::min(grid_size_z_ - 1, static_cast<unsigned int>(std::ceil(
+											   (br.top() + es_fe::delta) / params::grid_spacing)));
 
 			for (auto z = z_min; z <= z_max; ++z)
-				is_metallic_region_[z] = true;
+				metallic_regions_[z] = true;
 		}
 
 		// using T = monte_carlo::Point::Type;
@@ -198,10 +195,8 @@ private:
 		return rate;
 	};
 
-	std::vector<unsigned int> compute_filament_shape();
-
-	std::vector<double> compute_resistivity(const std::vector<unsigned int>& filament_shape) const;
-	void compute_potential_and_heating(const std::vector<unsigned int>& filament_shape);
+	void compute_filament_shape(std::vector<unsigned int>&) const;
+	void compute_potential_and_heat(const std::vector<unsigned int>& filament_shape);
 
 private:
 	es_fe::Mesh2 poisson_mesh_;
@@ -213,7 +208,6 @@ private:
 	double voltage_bias_;
 	double current_;
 
-	// Core potential (r = 0) at z-grid mid-points (i + 1/2)
 	std::vector<double> core_potential_;
 	std::vector<double> core_heat_;
 
@@ -224,9 +218,9 @@ private:
 	unsigned int grid_size_xy_;
 	unsigned int grid_size_z_;
 
-	Matrix3<double> mc_temp_;
-	Matrix3<double> mc_potential_;
+	Grid3<double> mc_temp_;
+	Grid3<double> mc_potential_;
 
 	Monte_carlo mc_;
-	std::vector<bool> is_metallic_region_;
+	std::vector<bool> metallic_regions_;
 };
