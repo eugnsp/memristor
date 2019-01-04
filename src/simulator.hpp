@@ -50,7 +50,7 @@ public:
 		std::vector<double> biases;
 		std::vector<double> currents;
 
-		bool sweep_direction = true;
+		double sweep_direction = 1;
 
 		std::cout << "#    Time      Fil.size  Bias      Current   MC est.      MC act.\n"
 				  << "     [msec]    [layers]  [V]       [uA]      [usec/step]  [steps]\n"
@@ -90,9 +90,7 @@ public:
 			if (est_step_duration < time_step)
 			{
 				// Step 7
-				const auto mc_res = mc_.run(sweep_direction ? params::steps_per_round
-															: 10 * params::steps_per_round,
-											time_step, rate_fn);
+				const auto mc_res = mc_.run(params::steps_per_round, time_step, rate_fn);
 				time_step = mc_res.second;
 
 				std::cout << std::setw(9) << mc_res.first << std::endl;
@@ -117,20 +115,15 @@ public:
 			}
 
 			// Step 8
-			if (sweep_direction)
-				voltage_bias_ += time_step * params::bias_sweep_rate;
-			else
-				voltage_bias_ -= time_step * params::bias_sweep_rate;
+			voltage_bias_ += sweep_direction * time_step * params::bias_sweep_rate;
 
 			time += time_step;
 			++i;
 
-			if (fil_size > 40)
-				sweep_direction = false;
-
-			if (!sweep_direction && voltage_bias_ < 0)
+			if (voltage_bias_ >= params::max_bias)
+				sweep_direction *= -1;
+			if (sweep_direction < 0 && voltage_bias_ < 0)
 				break;
-			//		 mc_.write("mc" + std::to_string(i) + ".mat");
 		}
 	}
 

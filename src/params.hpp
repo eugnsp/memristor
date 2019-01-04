@@ -71,4 +71,10 @@ inline constexpr auto heat_source_radius = 2_nm;
 
 // Bias voltage sweep speed
 inline constexpr auto bias_sweep_rate = 200_volt / 1_sec;
+
+// Maximum bias voltage
+inline constexpr auto max_bias = 3.6_volt;
+
+// TODO: Maximum current
+// inline constexpr auto max_current = 58e-6_amp;
 } // namespace params

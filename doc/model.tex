@@ -249,7 +249,7 @@ Dirichlet boundary conditions are used at the contacts and along the core:
 	\phi(\vx)\vert_{\Gamma_3} = 0, \quad
 	\Gamma_3 = \partial\Omega_P \cap \{ z = 0 \},\\
 	%
-	\phi(\vx)\vert_{\Gamma_4} = -eV, \quad
+	\phi(\vx)\vert_{\Gamma_4} = V, \quad
 	\Gamma_4 = \partial\Omega_P \cap \{ z = h_s \},\\
 	%
 	\phi(\vx)\vert_{\Gamma_5} = \phi_c(z),
@@ -426,7 +426,7 @@ $n_{\min} := \{ \mathsf{min\_filament\_radius} \}$.
 		\draw (6, -.1) node[below] {$\cdots$};
 		\draw (10, -.1) node[below] {$\phi_{N - 1}$};
 		\draw (11, -.1) node[below] {$\phi_{N}$};
-		\draw (11, -.5) node[below] {$= -eV$};
+		\draw (11, -.5) node[below] {$= V$};
 
 		\draw[->,thick,dashed] (.3, 0) -- (11.7, 0) node[below] {$z$};
 
@@ -442,11 +442,11 @@ fig.~\ref{fig:core_potential}:
 \begin{equation}
 	\begin{split}
 		\phi_0 & = 0, \\
-		\phi_1 & = \phi(z_{1/2}) = -eI \frac{r_c(z_0) \delta}{2}, \\
-		\phi_2 & = \phi(z_{3/2}) = -eI \left[ \frac{r_c(z_0)}{2} +
+		\phi_1 & = \phi(z_{1/2}) = I \frac{r_c(z_0) \delta}{2}, \\
+		\phi_2 & = \phi(z_{3/2}) = I \left[ \frac{r_c(z_0)}{2} +
 			r_c(z_1) \right] \delta, \\
 		\cdots \\
-		\phi_N & = \phi(z_{N - 1}) = -eIR = -eV.
+		\phi_N & = \phi(z_{N - 1}) = IR = V.
 	\end{split}
 \end{equation}
 where the total resistance~$R$ is:
