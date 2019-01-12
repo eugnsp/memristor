@@ -10,12 +10,13 @@
 #include <algorithm>
 #include <cmath>
 
-template<class Fe_solution_view>
-void interpolate(const Fe_solution_view& fe_solution, Tensor<double>& tensor)
+template<class Fe_solution_view, typename T>
+void interpolate(
+	const Fe_solution_view& fe_solution, Tensor<T>& tensor)
 {
 	using params::grid_spacing;
 
-	assert(to.extents().x == to.extents().y);
+	assert(tensor.extents().x == tensor.extents().y);
 	const auto size_xy = tensor.extents().x;
 	const auto size_z = tensor.extents().z;
 	const auto center_xy = (size_xy - 1) / 2;

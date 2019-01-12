@@ -1,22 +1,21 @@
 #include "simulator.hpp"
-#include "monte_carlo/monte_carlo.hpp"
+#include "monte_carlo/tensor.hpp"
+#include "monte_carlo/is_point_available.hpp"
+#include "interpolate.hpp"
 #include "params.hpp"
+#include "tags_as_solution.hpp"
 
-#include <es_la/dense.hpp>
+#include <es_fe/geom/compare.hpp>
 #include <es_fe/mesh/io.hpp>
 #include <es_fe/mesh/mesh2.hpp>
 #include <es_fe/mesh/tools/mesh_filter.hpp>
-#include <es_fe/geom/algorithm.hpp>
-#include <es_fe/geom/compare.hpp>
 #include <es_util/phys.hpp>
-#include <es_util/numeric.hpp>
 
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <iostream>
-#include <iomanip>
-#include <numeric>
+#include <vector>
 
 void Simulator::init_meshes(const char* mesh_file)
 {
@@ -38,10 +37,31 @@ void Simulator::init_meshes(const char* mesh_file)
 	std::copy_if(heat_tags_.begin(), heat_tags_.end(), poisson_tags_.begin(), tag_filter);
 }
 
+void Simulator::init_monte_carlo()
+{
+	const auto mc_grid_size = Point{grid_size_xy_, grid_size_xy_, grid_size_z_};
+
+	mc_potential_.resize(mc_grid_size);
+	mc_potential_.assign(0);
+
+	mc_temp_.resize(mc_grid_size);
+	mc_temp_.assign(0);
+
+	Tensor<Is_point_available> available_points(mc_grid_size);
+	interpolate(Tags_as_solution{poisson_mesh_, poisson_tags_}, available_points);
+
+	const auto is_boundary_point = [this](const Point& point)
+	{
+		const auto z = point.z * params::grid_spacing;
+		return es_fe::is_geom_equal(std::abs(z - system_height_), 0);
+	};
+
+	mc_.init(available_points, is_boundary_point);
+	mc_.fill_uniform(params::initial_filling);
+}
+
 void Simulator::init()
 {
-	using namespace es_util::au::literals;
-
 	init_meshes("../mesh/mesh3.msh");
 
 	const auto mesh_br = poisson_mesh_.bounding_rect();
@@ -51,45 +71,12 @@ void Simulator::init()
 	grid_center_xy_ = static_cast<unsigned int>(system_radius_ / params::grid_spacing);
 	grid_size_xy_ = 1 + 2 * grid_center_xy_;
 	grid_size_z_ = 1 + static_cast<unsigned int>(system_height_ / params::grid_spacing);
-	const auto mc_grid_size = Point{grid_size_xy_, grid_size_xy_, grid_size_z_};
 
 	core_heat_.resize(grid_size_z_);
 	core_potential_.resize(grid_size_z_ + 1);
 
-	mc_potential_.resize(mc_grid_size);
-	mc_potential_.assign(0);
-
-	mc_temp_.resize(mc_grid_size);
-	mc_temp_.assign(0);
-
+	init_monte_carlo();
 	find_forbidden_grid_regions();
-
-	mc_.define_shape(
-		mc_grid_size,
-		// TODO : use mesh tags
-		[this](Point pt)
-		{
-			const auto x = pt.x * params::grid_spacing - params::grid_spacing * grid_center_xy_;
-			const auto y = pt.y * params::grid_spacing - params::grid_spacing * grid_center_xy_;
-			const auto r = std::hypot(x, y);
-
-			const auto z = pt.z * params::grid_spacing;
-
-			if (r > 15_nm) // system boundary
-				return false;
-			if (z < 5_nm && r < 1_nm) // tip
-				return false;
-			if (es_util::sq(r / 1.5_nm) + es_util::sq((z - 20_nm) / 3_nm) < 1) // granule
-				return false;
-
-			return true;
-		}, [this](Point pt)
-		{
-			const auto z = pt.z * params::grid_spacing;
-			return std::abs(z - system_height_) < params::grid_spacing / 4;
-		});
-
-	mc_.init(params::initial_filling);
 
 	std::cout << "System diameter: " << es_util::au::to_nm(2 * system_radius_) << " nm\n"
 			  << "System height:   " << es_util::au::to_nm(system_height_)

@@ -13,6 +13,9 @@
 template<class T>
 class Tensor
 {
+	template<typename S>
+	friend class Tensor;
+
 private:
 	using Container = std::vector<T>;
 	using Coord = Point::Type;
@@ -67,6 +70,15 @@ public:
 
 	//////////////////////////////////////////////////////////////////////
 	/** Modifiers */
+
+	template<typename S>
+	Tensor& operator=(const Tensor<S>& other)
+	{
+		extents_ = other.extents();
+		data_.assign(other.data_.begin(), other.data_.end());
+
+		return *this;
+	}
 
 	void resize(const Point& extents, const T& value = T())
 	{

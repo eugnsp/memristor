@@ -41,12 +41,9 @@ public:
 		Poisson_solver poisson_solver{poisson_mesh_, poisson_tags_, core_potential_};
 		poisson_solver.init();
 
-		// TODO : in init()?
-		mc_.init(params::initial_filling);
-
 		// Step 2
 		double external_bias = 0;
-		limiting_resistance_ = 0;
+		double limiting_resistance = 0;
 		bias_ = external_bias;
 		double time = 0;
 		unsigned int i = 0;
@@ -95,7 +92,7 @@ public:
 					  << es_util::au::to_volt(external_bias) << ' ' << std::setw(9)
 					  << es_util::au::to_volt(bias_) << ' ' << std::setw(9)
 					  << es_util::au::to_ohm(bias_ / current_) / 1e3 << ' ' << std::setw(9)
-					  << es_util::au::to_ohm(limiting_resistance_) / 1e3 << ' ' << std::setw(9)
+					  << es_util::au::to_ohm(limiting_resistance) / 1e3 << ' ' << std::setw(9)
 					  << es_util::au::to_amp(current_) / 1e-6 << ' ' << std::flush;
 
 			// Step 5
@@ -168,7 +165,7 @@ public:
 				if (z < 0)
 					z = 0;
 				bias_ = external_bias - z;
-				limiting_resistance_ = z / current_;
+				limiting_resistance = z / current_;
 			}
 			else
 			{
@@ -176,7 +173,7 @@ public:
 				if (z < 0)
 					z = 0;
 				bias_ = external_bias + z;
-				limiting_resistance_ = -z / current_;
+				limiting_resistance = -z / current_;
 			}
 
 			time += time_step;
@@ -196,6 +193,8 @@ public:
 
 private:
 	void init_meshes(const char* mesh_file);
+	void init_monte_carlo();
+
 	void init();
 
 	void find_forbidden_grid_regions()
@@ -266,7 +265,6 @@ private:
 	std::vector<unsigned int> heat_tags_;
 
 	double bias_;
-	double limiting_resistance_;
 	double current_;
 
 	std::vector<double> core_potential_;

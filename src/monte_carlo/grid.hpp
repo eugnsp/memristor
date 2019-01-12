@@ -46,22 +46,20 @@ public:
 	//////////////////////////////////////////////////////////////////////
 	//* Initialization */
 
-	template<class Shape_predicate, class Boundary_predicate>
-	void define_shape(
-		Point extents, Shape_predicate is_point_available, Boundary_predicate is_boundary_point)
+	template<typename Bool, class Boundary_predicate>
+	void init(const Tensor<Bool>& available_points, Boundary_predicate is_boundary_point)
 	{
-		sites_.assign(extents, Site{index_invalid, index_invalid});
+		sites_.assign(available_points.extents(), Site{index_invalid, index_invalid});
 		boundary_.clear();
 
-		sites_.for_each([&, this](Site& site, const Point& pt)
-		{
-			if (is_point_available(pt))
+		sites_.for_each([&, this](Site& site, const Point& point) {
+			if (available_points[point])
 			{
 				site.occup_index = index_empty;
-				if (is_boundary_point(pt))
+				if (is_boundary_point(point))
 				{
 					site.bnd_index = n_boundary();
-					boundary_.push_back(pt);
+					boundary_.push_back(point);
 				}
 			}
 		});
@@ -69,23 +67,22 @@ public:
 
 	// Randomly uniformly distributes points in the grid with a given filling factor
 	template<class Uniform_rnd_generator>
-	void init(double filling, Uniform_rnd_generator& rnd_generator)
+	void fill_uniform(double filling, Uniform_rnd_generator& rnd_generator)
 	{
 		assert(0 < filling && filling < 1);
 
 		for (const auto& point : occupied_)
 			sites_[point].occup_index = index_empty;
 
-		const auto n_available = sites_.count_if(
-			[this](const Site& site) { return is_empty(site); });
+		const auto n_available =
+			sites_.count_if([this](const Site& site) { return is_empty(site); });
 		const auto n_to_fill = static_cast<Index>(filling * n_available);
 		assert(n_to_fill > 0);
 
 		std::vector<Point> available;
 		available.reserve(n_available);
 
-		sites_.for_each([this, &available](const Site& site, const Point& point)
-		{
+		sites_.for_each([this, &available](const Site& site, const Point& point) {
 			if (is_empty(site))
 				available.push_back(point);
 		});

@@ -2,7 +2,6 @@
 #include "../params.hpp"
 #include "neighbour.hpp"
 #include "point.hpp"
-#include "point_event_map.hpp"
 #include "rates_table.hpp"
 
 #include <es_la/dense.hpp>
@@ -28,25 +27,19 @@ public:
 	Monte_carlo() : rates_{grid_}
 	{
 		std::random_device rnd_device;
-// #ifdef NDEBUG
-		// rnd_generator_.seed(rnd_device());
-// #else
-		rnd_generator_.seed(0);
-// #endif
+		rnd_generator_.seed(rnd_device());
 	}
 
-	template<class Shape_predicate, class Boundary_predicate>
-	void define_shape(
-		Point size, Shape_predicate is_point_available, Boundary_predicate is_boundary_point)
+	template<typename Bool, class Boundary_predicate>
+	void init(const Tensor<Bool>& available_points, Boundary_predicate is_boundary_point)
 	{
-		grid_.define_shape(size, is_point_available, is_boundary_point);
+		grid_.init(available_points, is_boundary_point);
 	}
 
 	// Randomly uniformly distributes points in the lattice with a given filling factor
-	void init(double filling)
+	void fill_uniform(double filling)
 	{
-		grid_.init(filling, rnd_generator_);
-		time_ = 0;
+		grid_.fill_uniform(filling, rnd_generator_);
 	}
 
 	template<class Rate_fn>
@@ -125,15 +118,13 @@ private:
 		assert(grid_.is_occupied(src));
 		assert(grid_.is_empty(dest));
 
-		// The point `src` becomes empty
-		constexpr auto is_src_empty = true;
+		constexpr auto is_src_empty = true; // `src` becomes empty
 		rates_.update_rates_for_neighbours_as_dest(src, is_src_empty, rate_fn);
 		rates_.update_rates_for_neighbours_as_src(src, is_src_empty, rate_fn);
 
 		grid_.move_occupied(src, dest);
 
-		// The point `src` becomes occupied
-		constexpr auto is_dest_empty = false;
+		constexpr auto is_dest_empty = false; // `dest` becomes occupied
 		rates_.update_rates_for_neighbours_as_dest(dest, is_dest_empty, rate_fn);
 		rates_.update_rates_for_neighbours_as_src(dest, is_dest_empty, rate_fn);
 	}

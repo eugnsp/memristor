@@ -50,6 +50,29 @@ public:
 		return bnd_rates_.lower_bound(accumulated_rate);
 	}
 
+	std::pair<Point, Point> int_event_points(Index ev_index) const
+	{
+		assert(ev_index < n_int_events());
+
+		const auto block_index = ev_index / *n_neighbours;
+		const auto n_index = static_cast<Neighbour_index>(ev_index % *n_neighbours);
+
+		const auto src = grid_.occupied_point(block_index);
+		const auto dest = neighbour(src, n_index);
+
+		assert(grid_.is_occupied(src));
+		assert(grid_.is_empty(dest));
+
+		return {src, dest};
+	}
+
+	Point bnd_event_point(Index ev_index) const
+	{
+		assert(ev_index < n_bnd_events());
+
+		return grid_.boundary_point(ev_index);
+	}
+
 	//////////////////////////////////////////////////////////////////////
 	//* Modifiers */
 
@@ -86,24 +109,12 @@ public:
 					constexpr auto eta = params::initial_filling;
 					const auto delta_in_rate = (1 - eta) / eta * rate_fn(dest, src);
 					bnd_rates_.add(ev_index, is_dest_empty ? -delta_in_rate : delta_in_rate);
-
-					// if (bnd_rates_[ev_index] < 0)
-					// {
-					// 	std::cout << is_dest_empty << '\n';
-					// 	std::cout << bnd_rates_[ev_index] << ' ' << delta_in_rate << '\n';
-					// }
 				}
 				else
 				{
 					constexpr auto eta = params::initial_filling;
 					const auto delta_out_rate = eta / (1 - eta) * rate_fn(dest, src);
 					bnd_rates_.add(ev_index, is_dest_empty ? delta_out_rate : -delta_out_rate);
-
-					// if (bnd_rates_[ev_index] < 0)
-					// {
-					// 	std::cout << is_dest_empty << '\n';
-					// 	std::cout << bnd_rates_[ev_index] << ' ' << delta_out_rate << '\n';
-					// }
 				}
 				// assert(bnd_rates_[ev_index] >= 0);	// TODO : remove
 			}
@@ -132,29 +143,6 @@ public:
 			const auto ev_index = bnd_event_index(grid_.boundary_index(src));
 			bnd_rates_.set(ev_index, boundary_rate(src, is_src_empty, rate_fn));
 		}
-	}
-
-	std::pair<Point, Point> int_event_points(Index ev_index) const
-	{
-		assert(ev_index < n_int_events());
-
-		const auto block_index = ev_index / *n_neighbours;
-		const auto n_index = static_cast<Neighbour_index>(ev_index % *n_neighbours);
-
-		const auto src = grid_.occupied_point(block_index);
-		const auto dest = neighbour(src, n_index);
-
-		assert(grid_.is_occupied(src));
-		assert(grid_.is_empty(dest));
-
-		return {src, dest};
-	}
-
-	Point bnd_event_point(Index ev_index) const
-	{
-		assert(ev_index < n_bnd_events());
-
-		return grid_.boundary_point(ev_index);
 	}
 
 	void add_events()
@@ -241,8 +229,7 @@ private:
 		for (auto& src : grid_.occupied_points())
 		{
 			const auto occup_index = grid_.occupied_index(src);
-			for_each_neighbour(src, [&, this](const Point& dest, Neighbour_index n_index)
-			{
+			for_each_neighbour(src, [&, this](const Point& dest, Neighbour_index n_index) {
 				if (contains(grid_.extents(), dest) && grid_.is_empty(dest))
 				{
 					const auto ev_index = int_event_index(occup_index, n_index);
@@ -255,7 +242,7 @@ private:
 	}
 
 	template<class Rate_fn>
-	void init_boundary(Rate_fn&& rate_fn)
+	void init_boundary(Rate_fn rate_fn)
 	{
 		std::vector<double> rates(n_bnd_events(), 0);
 
