@@ -1,6 +1,6 @@
 #pragma once
 #include "params.hpp"
-#include "grid3.hpp"
+#include "monte_carlo/tensor.hpp"
 
 #include <es_fe/geom/algorithm.hpp>
 #include <es_fe/geom/compare.hpp>
@@ -11,16 +11,16 @@
 #include <cmath>
 
 template<class Fe_solution_view>
-void interpolate(const Fe_solution_view& from, Grid3<double>& to)
+void interpolate(const Fe_solution_view& fe_solution, Tensor<double>& tensor)
 {
 	using params::grid_spacing;
 
 	assert(to.extents().x == to.extents().y);
-	const auto size_xy = to.extents().x;
-	const auto size_z = to.extents().z;
+	const auto size_xy = tensor.extents().x;
+	const auto size_z = tensor.extents().z;
 	const auto center_xy = (size_xy - 1) / 2;
 
-	for (auto& face : from.mesh().faces())
+	for (auto& face : fe_solution.mesh().faces())
 	{
 		const auto br = bounding_rect(face);
 
@@ -50,7 +50,7 @@ void interpolate(const Fe_solution_view& from, Grid3<double>& to)
 
 					const es_fe::Point pt{r * grid_spacing, z * grid_spacing};
 					if (contains(face, pt))
-						to[{x, y, z}] = from(face, pt);
+						tensor(x, y, z) = fe_solution(face, pt);
 				}
 
 				for (auto x = center_xy + x_min; x <= center_xy + x_max; ++x)
@@ -60,7 +60,7 @@ void interpolate(const Fe_solution_view& from, Grid3<double>& to)
 
 					const es_fe::Point pt{r * grid_spacing, z * grid_spacing};
 					if (contains(face, pt))
-						to[{x, y, z}] = from(face, pt);
+						tensor(x, y, z) = fe_solution(face, pt);
 				}
 			}
 	}

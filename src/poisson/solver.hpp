@@ -1,6 +1,6 @@
 #pragma once
-#include "poisson_system.hpp"
-#include "params.hpp"
+#include "system.hpp"
+#include "../params.hpp"
 
 #include <es_la/solver/pardiso_solver.hpp>
 #include <es_la/io/matfile_writer.hpp>
@@ -37,8 +37,10 @@ public:
 	using Base::system;
 
 public:
-	Poisson_solver(const es_fe::Mesh2& mesh, const std::vector<unsigned int>& tags,
-				   const std::vector<double>& core_potential) :
+	Poisson_solver(
+		const es_fe::Mesh2& mesh,
+		const std::vector<unsigned int>& tags,
+		const std::vector<double>& core_potential) :
 		Base(mesh),
 		tags_(tags), core_potential_(core_potential)
 	{
@@ -52,10 +54,10 @@ public:
 		const auto height = mesh_br.height();
 
 		system().variable().set_bnd_cond<0>(mesh(), es_fe::Linestring{{0, 0}, {width, 0}});
-		system().variable().set_bnd_cond<1>(mesh(),
-											es_fe::Linestring{{0, height}, {width, height}});
-		system().variable().set_bnd_cond<2>(mesh(), es_fe::Linestring{{0, 0}, {0, height}},
-											core_potential_);
+		system().variable().set_bnd_cond<1>(
+			mesh(), es_fe::Linestring{{0, height}, {width, height}});
+		system().variable().set_bnd_cond<2>(
+			mesh(), es_fe::Linestring{{0, 0}, {0, height}}, core_potential_);
 
 		Base::init();
 		es_fe::compute_and_set_sparsity_pattern(system(), matrix_);

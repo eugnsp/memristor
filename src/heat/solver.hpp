@@ -1,6 +1,6 @@
 #pragma once
-#include "heat_system.hpp"
-#include "params.hpp"
+#include "system.hpp"
+#include "../params.hpp"
 
 #include <es_util/numeric.hpp>
 #include <es_la/solver/pardiso_solver.hpp>
@@ -42,8 +42,10 @@ public:
 	using Base::system;
 
 public:
-	Heat_solver(const es_fe::Mesh2& mesh, const std::vector<unsigned int>& tags,
-				const std::vector<double>& core_heat_source) :
+	Heat_solver(
+		const es_fe::Mesh2& mesh,
+		const std::vector<unsigned int>& tags,
+		const std::vector<double>& core_heat_source) :
 		Base(mesh),
 		tags_(tags), core_heat_(core_heat_source)
 	{

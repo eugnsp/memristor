@@ -6,11 +6,6 @@
 
 int main(int argc, const char** argv)
 {
-
-	es_fe::Point pt1{4, 5};
-
-	std::cout << pt1;
-
 	try
 	{
 		std::cout << "Memristor simulation code ver. 1.0\n"

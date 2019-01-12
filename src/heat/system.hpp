@@ -1,5 +1,5 @@
 #pragma once
-#include "heat_boundary_cond.hpp"
+#include "boundary_cond.hpp"
 
 #include <es_fe/var_list.hpp>
 #include <es_fe/system.hpp>

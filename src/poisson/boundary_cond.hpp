@@ -1,5 +1,5 @@
 #pragma once
-#include "params.hpp"
+#include "../params.hpp"
 
 #include <es_fe/types.hpp>
 #include <es_fe/mesh/mesh2.hpp>
@@ -62,8 +62,10 @@ private:
 class Poisson_dirichlet_core : public Poisson_dirichlet
 {
 public:
-	Poisson_dirichlet_core(const es_fe::Mesh2& mesh, const es_fe::Linestring& ls,
-						   const std::vector<double>& core_potential) :
+	Poisson_dirichlet_core(
+		const es_fe::Mesh2& mesh,
+		const es_fe::Linestring& ls,
+		const std::vector<double>& core_potential) :
 		Poisson_dirichlet(mesh, ls),
 		core_potential_(core_potential)
 	{

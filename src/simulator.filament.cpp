@@ -71,9 +71,11 @@ void Simulator::compute_potential_and_heat(const std::vector<unsigned int>& fila
 	}
 
 	// Compute current
-	const auto total_resistivity = std::accumulate(resistivity.begin() + 1, resistivity.end() - 1,
-												   (resistivity.front() + resistivity.back()) / 2);
-	current_ = voltage_bias_ / (params::grid_spacing * total_resistivity);
+	const auto total_resistivity = std::accumulate(
+		resistivity.begin() + 1, resistivity.end() - 1,
+		(resistivity.front() + resistivity.back()) / 2);
+
+	current_ = bias_ / (params::grid_spacing * total_resistivity);
 
 	// Compute heat source linear density
 	assert(core_heat_.size() == grid_size_z_);
@@ -91,5 +93,5 @@ void Simulator::compute_potential_and_heat(const std::vector<unsigned int>& fila
 		core_potential_[z] = current_ * params::grid_spacing * acc_resistivity;
 		acc_resistivity += resistivity[z];
 	}
-	core_potential_.back() = voltage_bias_;
+	core_potential_.back() = bias_;
 }

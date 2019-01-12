@@ -1,5 +1,5 @@
 #pragma once
-#include "poisson_boundary_cond.hpp"
+#include "boundary_cond.hpp"
 
 #include <es_fe/var_list.hpp>
 #include <es_fe/system.hpp>
@@ -9,8 +9,12 @@
 #include <string>
 
 using Poisson_element = es_fe::Lagrange<1, 2>;
-using Poisson_var = es_fe::Var<Poisson_element, 1, Poisson_dirichlet_const, Poisson_dirichlet_const,
-							   Poisson_dirichlet_core>;
+using Poisson_var = es_fe::Var<
+	Poisson_element,
+	1,
+	Poisson_dirichlet_const,
+	Poisson_dirichlet_const,
+	Poisson_dirichlet_core>;
 
 class Poisson_system final : public es_fe::System<es_fe::Var_list<Poisson_var>, es_fe::Dof_mapper>
 {

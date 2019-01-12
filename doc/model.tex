@@ -8,7 +8,6 @@
 \usepackage{tikz}
 
 \newcommand{\dd}{\mathrm{d}}
-
 \renewcommand{\vec}[1]{\mathbf{#1}}
 \newcommand{\ve}{\vec{e}}
 \newcommand{\vi}{\vec{i}}
@@ -68,18 +67,19 @@ file are used to discern different regions.
 		\draw (0, 7) node[left] {$h_s$};
 		\draw (5, 0) node[below] {$r_s$};
 
-		\draw (5, 4) node[right] {$T = T_0$};
-		\draw (5, 3.5) node[right] {$\phi_n = 0$};
+		\draw (5, 4) node[right] {$T = T_0,$};
+		\draw (5, 3.5) node[right] {$\phi_n = 0,$};
+		\draw (5, 3) node[right] {opaque};
 
-		\draw (0, 4) node[left] {$T_n = 0$};
-		\draw (0, 3.5) node[left] {$\phi = \phi_c(z)$};
+		\draw (0, 3.75) node[left] {$T_n = 0$};
+		\draw (0, 3.25) node[left] {$\phi = \phi_c(z)$};
 
-		\draw (2.5, 0) node[below] {$T = T_0, \, \phi = 0$};
+		\draw (2.5, 0) node[below] {$T = T_0, \, \phi = 0$, opaque};
 		\draw (2.5, 8) node[above] {$T = T_0$};
-		\draw (2.5, 7) node[above] {$\phi = -eV$};
+		\draw (2.8, 7) node[above] {$\phi = -eV, \, \langle v_\vi \rangle = \eta$};
 	\end{tikzpicture}
 	\caption{Geometry of the system ($\Omega_T$~--- metallic tip, $\Omega_G$~---
-		metallic granule(s), $\Omega_C$~--- top contact, $\Omega_D$~--- dielectic
+		metallic granule(s), $\Omega_C$~--- top contact, $\Omega_D$~--- dielectric
 		matrix), and boundary conditions. The projection of the Monte-Carlo 3D
 		grid onto the ($\phi = 0$)-plane is shown with red circles.}
 	\label{fig:system_geometry}
@@ -166,20 +166,20 @@ by parts we get
 	- \int_{\Omega_H} \chi c \frac{\partial T}{\partial r} = \\
 	%
 	= \int_{\Omega_H} c [ \nabla ( r \chi ) \cdot \nabla T ]
-	- \int_{\partial\Omega_H} r \chi c [ \nabla T \cdot \hat{\vn} ]
+	- \int_{\partial\Omega_H} r \chi c ( \nabla T \cdot \hat{\vn} )
 	- \int_{\Omega_H} \chi c \frac{\partial T}{\partial r} = \\
 	%
-	= \int_{\Omega_H} r c [ \nabla \chi \cdot \nabla T ]
-	- \int_{\partial\Omega_H} r \chi c [ \nabla T \cdot \hat\vn ]
+	= \int_{\Omega_H} r c ( \nabla \chi \cdot \nabla T )
+	- \int_{\partial\Omega_H} r \chi c ( \nabla T \cdot \hat\vn )
 	%
 	= \frac{I^2}{\pi r_0^2} \int_{\Omega_H} r \chi \theta(r_0 - r) r_c.
 \end{multline}
 
-The space of test functions is chosen such that $\chi$ vanishs at the
+The space of test functions is chosen such that $\chi$ vanishes at the
 Diriclet boundary. Then due to the compatibility
 condition~\eqref{eq:temp_compatibility_bc} the boundary term drops out:
 \begin{equation}
-	\int_{\Omega_H} r c [ \nabla \chi \cdot \nabla T ]
+	\int_{\Omega_H} r c ( \nabla \chi \cdot \nabla T )
 	= \frac{I^2}{\pi r_0^2} \int_{\Omega_H} r \chi \theta(r_0 - r) r_c.
 \end{equation}
 
@@ -187,9 +187,9 @@ To account for non-zero Dirichlet boundary conditions, we make a substitution
 $T \to T + T_b$, where $T$ now has zero boundary conditions, and $T_b$ is an
 arbitrary function such that $T_b |_\Gamma = T_0$:
 \begin{equation}
-	\int_{\Omega_H} r c [ \nabla \chi \cdot \nabla T ]
+	\int_{\Omega_H} r c ( \nabla \chi \cdot \nabla T )
 	= \frac{I^2}{\pi r_0^2} \int_{\Omega_H} r \chi \theta(r_0 - r) r_c
-	- \int_{\Omega_H} r c [ \nabla \chi \cdot \nabla T_b ]
+	- \int_{\Omega_H} r c ( \nabla \chi \cdot \nabla T_b )
 \end{equation}
 
 Expanding $T = \sum_j T_j \chi_j$ over basis functions~$\chi_i$ and using
@@ -199,10 +199,10 @@ the Galerkin's method, we get the discrete system for the $T_j$ coefficients:
 \end{equation}
 where
 \begin{equation}
-	S_{ij} = \int_{\Omega_H} r c [ \nabla\chi_i \cdot \nabla\chi_j ], \quad
+	S_{ij} = \int_{\Omega_H} r c ( \nabla\chi_i \cdot \nabla\chi_j ), \quad
 	%
 	b_i = \frac{I^2}{\pi r_0^2} \int_{\Omega_H} r \chi_i \theta(r_0 - r) r_c
-	- \int_{\Omega_H} r c [ \nabla\chi_i \cdot \nabla T_b ].
+	- \int_{\Omega_H} r c ( \nabla\chi_i \cdot \nabla T_b ).
 \end{equation}
 
 % ================================================================================
@@ -223,9 +223,9 @@ The equation is solved in the area
 For~$\phi(\vx) = \phi(r, z)$ this equation takes the form:
 \begin{equation}
 	\label{eq:poisson_equation_rz}
-	- \frac{\partial}{\partial r} \left[ \epsilon \frac{\partial \phi}{\partial r} \right]
+	- \frac{\partial}{\partial r} \left( \epsilon \frac{\partial \phi}{\partial r} \right)
 	- \frac{\epsilon}{r} \frac{\partial \phi}{\partial r}
-	- \frac{\partial}{\partial z} \left[ \epsilon \frac{\partial \phi}{\partial z} \right]
+	- \frac{\partial}{\partial z} \left( \epsilon \frac{\partial \phi}{\partial z} \right)
 	= 0.
 \end{equation}
 
@@ -238,27 +238,27 @@ important. The following values are used:
 			100,	& \vx \in \Omega_T \cup \Omega_G,
 		\end{cases}
 \end{equation}
-where $100$ is an arbitrary constant $\gg 1$ used to model a metallic region where
+where $100 \gg 1$ is an arbitrary constant used to model a metallic region where
 the potential is constant.
 
 % --------------------------------------------------------------------------------
 \subsection{Boundary conditions}
 
 Dirichlet boundary conditions are used at the contacts and along the core:
-\begin{gather}
-	\phi(\vx)\vert_{\Gamma_3} = 0, \quad
-	\Gamma_3 = \partial\Omega_P \cap \{ z = 0 \},\\
+\begin{alignat}{2}
+	\phi(\vx)\vert_{\Gamma_3} &= 0, &
+	\Gamma_3 &= \partial\Omega_P \cap \{ z = 0 \},\\
 	%
-	\phi(\vx)\vert_{\Gamma_4} = V, \quad
-	\Gamma_4 = \partial\Omega_P \cap \{ z = h_s \},\\
+	\phi(\vx)\vert_{\Gamma_4} &= V, &
+	\Gamma_4 &= \partial\Omega_P \cap \{ z = h_s \},\\
 	%
-	\phi(\vx)\vert_{\Gamma_5} = \phi_c(z),
-	\quad \Gamma_5 = \partial\Omega_P \cap \{ r = 0 \},
-\end{gather}
+	\phi(\vx)\vert_{\Gamma_5} &= \phi_c(z), & \quad
+	\Gamma_5 &= \partial\Omega_P \cap \{ r = 0 \},
+\end{alignat}
 where $V$ is the external bias voltage, and $\phi_c(z)$ is the potential along
 the core.
 
-At the outter boundary zero Neumann condition is used:
+At the outer boundary zero Neumann condition is used:
 \begin{equation}
 	\frac{\partial \phi}{\partial r} \bigg\vert_{\Gamma_6} = E_n = 0, \quad
 	\Gamma_6 = \partial \Omega_P \cap \{ r = r_s \}.
@@ -270,9 +270,9 @@ At the outter boundary zero Neumann condition is used:
 The Poisson equation has the same type as the heat equation, and its
 discretization follows the same lines. The result is:
 \begin{equation}
-	S_{ij} = \int_{\Omega_P} r [ \nabla\chi_i \cdot \nabla\chi_j ], \quad
+	S_{ij} = \int_{\Omega_P} r ( \nabla\chi_i \cdot \nabla\chi_j ), \quad
 	%
-	b_i = - \int_{\Omega_P} r [ \nabla\chi_i \cdot \nabla \phi_b ],
+	b_i = - \int_{\Omega_P} r ( \nabla\chi_i \cdot \nabla \phi_b ),
 \end{equation}
 where $\phi_b$ is an arbitrary function that satisfies non-zero Dirichlet
 boundary conditions.
@@ -294,11 +294,11 @@ It is assumed that vacancies hop only between nearest-neighbour sites. Each site
 (except for boundary ones) has six nearest neighbours. The rate (probability per
 unit time) of hopping is
 \begin{equation}
-	\Gamma_{\vi \to \vi'} = v_\vi (1 - v_{\vi'}) w_0
-	\exp \left\{
-	-\frac{E_{\mathrm{ac}} + [U(\vx_{\vi'}) - U(\vx_\vi)]}
-	{T[(\vx_\vi + \vx_{\vi'}) / 2]}
-	\right\}, \quad U(\vx) = q \phi(\vx),
+	\Gamma_{\vi \to \vi'} = v_\vi (1 - v_{\vi'}) \Gamma'_{\vi \to \vi'},
+	\quad
+	\Gamma'_{\vi \to \vi'} = w_0 \exp \left\{
+	-\frac{E_{\mathrm{ac}} + q[\phi(\vx_{\vi'}) - \phi(\vx_\vi)]}
+	{T[(\vx_\vi + \vx_{\vi'}) / 2]} \right\},
 \end{equation}
 where $w_0 := \{ \mathsf{debye\_frequency} \}$ is the Debye frequency, $T(\vx)$
 is the temperature, $\phi(\vx)$ is the electrostatic potential, and $q = e > 0$
@@ -310,20 +310,49 @@ and the destination one is empty ($v_{\vi'} = 0$).
 \subsection{Initial conditions}
 
 Initially all vacancies are distributed uniformly randomly over~$\mathcal{G}$
-with the filling factor $\xi := \{ \mathsf{initial\_filling} \}$,
-$0 < \xi < 1$, such that the total number of vacancies is
-$\lfloor \xi N_{\mathcal{G}} \rfloor$, where $N_{\mathcal{G}}$ is the total
+with the filling factor $\eta := \{ \mathsf{initial\_filling} \}$,
+$\eta \in (0, 1)$, such that the total number of vacancies is
+$\lfloor \eta N_{\mathcal{G}} \rfloor$, where $N_{\mathcal{G}}$ is the total
 number of sites in~$\mathcal{G}$.
 
 % --------------------------------------------------------------------------------
 \subsection{Boundary conditions}
 
 If the source or final site lies outside the domain~$\Omega_D$, the hopping
-rates are determined by the boundary conditions. All boundaries except for
+rates are determined by the boundary conditions. All boundaries, except for
 \begin{equation}
-	\Gamma_M = \partial\Omega_D \cap \{ z = h_s \}
+	\Gamma_M = \partial\Omega_D \cap \{ z = h_s \},
 \end{equation}
-are impenetrable, i.\,e. corresponding rates $\Gamma_{\vi\to\vi'}$ vanish.
+are impenetrable, i.\,e. corresponding rates for each boundary site $\vi$ vanish:
+\begin{equation}
+	\Gamma_{\bullet \to \vi} = 0, \quad
+	\Gamma_{\vi \to \bullet} = 0,
+\end{equation}
+where $\bullet$ denotes a ``virtual'' site outside the system.
+
+If a site~$\vi$ has the total in-scattering rate~$\Gamma_{\mathrm{in}}$
+and the total out-scattering rate $\Gamma_{\mathrm{out}}$, then its
+time-averaged population at large time scale
+$t \gg \Gamma_{\mathrm{in}}^{-1} + \Gamma_{\mathrm{out}}^{-1}$ is
+\begin{equation}
+	\langle v_\vi \rangle_t = \frac{\Gamma_{\mathrm{out}}^{-1}}%
+	{\Gamma_{\mathrm{in}}^{-1} + \Gamma_{\mathrm{out}}^{-1}} =
+	\frac{1}{1 + \Gamma_{\mathrm{out}} / \Gamma_{\mathrm{in}}}.
+\end{equation}
+
+At $\Gamma_M$ we require the time-averaged population to be equal to the initial
+filling factor~$\eta$: $\langle v_\vi \rangle = \eta$. Hence, if a boundary
+site~$\vi \in \Gamma_M$ is empty, the in-scattering rate $\Gamma_{\bullet \to \vi}$
+is
+\begin{equation}
+	\Gamma_{\bullet \to \vi} =
+		\frac{\eta}{1 - \eta} \sum_{\vi'} (1 - v_{\vi'}) \Gamma'_{\vi \to \vi'},
+\end{equation}
+and if it is occupied, the out-scattering rate $\Gamma_{\vi \to \bullet}$ is
+\begin{equation}
+	\Gamma_{\vi \to \bullet} =
+		\frac{1 - \eta}{\eta} \sum_{\vi'} v_{\vi'} \Gamma'_{\vi' \to \vi}.
+\end{equation}
 
 % --------------------------------------------------------------------------------
 \subsection{Algorithm}
@@ -332,28 +361,34 @@ Variable step size method is used for Monte-Carlo simulation. The following
 algorithm is used:
 
 \begin{enumerate}
-	\item \label{alg:monte_carlo_events} Identify all possible events and compute
-	      their rates $\{ \Gamma_k = \Gamma_{\vi \to \vi'} \}$.
+	\item \textbf{Initialization.} Identify all possible events and compute their rates
+		  $\{ \Gamma_k = \Gamma_{\vi \to \vi'}, \Gamma_{\bullet \to \vi},
+		  \Gamma_{\vi \to \bullet} \}$.
 
-	\item \label{alg:monte_carlo_next} Compute probabilities of all events:
-		  $\{ P_k = \Gamma_k / \Gamma \}$, where $\Gamma = \sum_k \Gamma_k$ is the
-		  total rate. Select the next event index~$n$ randomly according to this
-		  probability distribution: take a uniform random number $v$ in the
-		  range~$(0, 1)$ and find the smallest~$n$ such that
-		  $\sum_k^n \Gamma_k \geq v\Gamma$.
+	\item \label{alg:monte_carlo_next} \textbf{Main loop.} Compute probabilities
+		  of all events $\{ P_k = \Gamma_k / \Gamma \}$, where
+		  $\Gamma = \sum_k \Gamma_k$ is the total rate. Select the next event
+		  index~$n$ randomly according to this probability distribution: take
+		  a uniform random number $v \in (0, 1)$ and find the smallest~$n$
+		  such that $\sum_k^n \Gamma_k \geq v\Gamma$.
 
-	\item Compute the time step: $\Delta t_i = -\ln u / \Gamma$, where where $u$
-	      is a uniform random number (independent of $v$) in the range~$(0, 1)$.
+	\item \label{alg:monte_carlo_update} Update the list of possible events,
+		  calculate new $\{ \Gamma_k \}$, and recalculate those old
+		  $\{ \Gamma_k \}$ that could have changed.
+
+	\item Compute the time step $\Delta t_i = -\ln u / \Gamma$, where where
+		  $u \in (0, 1)$ is a uniform random number (independent of $v$).
 
 	\item Check if the total simulation duration $\Delta t = \sum_i \Delta t_i$
 		  and/or the number of steps exceed the given limits. \underline{Abort},
 		  if they do.
 
-	\item \underline{Go to} step \ref{alg:monte_carlo_events}.
+	\item \underline{Go to} step \ref{alg:monte_carlo_next}.
 \end{enumerate}
 
 Fenwick tree data structure is used for fast determination of the next event
-index in the step~\ref{alg:monte_carlo_next}.
+index in the step~\ref{alg:monte_carlo_next} and event table updates in the
+step~\ref{alg:monte_carlo_update}.
 
 % ================================================================================
 \section{Core resistance, potential and heat source}
@@ -361,7 +396,7 @@ index in the step~\ref{alg:monte_carlo_next}.
 If the core has linear resistivity~$r_c(z)$, then the potential along the core
 and the linear heat density due to the Joule heating are:
 \begin{equation}
-	\phi_c(z) = -e I \int_0^z \dd z'\, r_c(z'), \quad
+	\phi_c(z) = I \int_0^z \dd z'\, r_c(z'), \quad
 	s(z) = I^2 r_c(z),
 \end{equation}
 where $I$ is the total current:
@@ -378,12 +413,13 @@ filament is formed at $z$; (3)~filament with linear resistivity
 	r_f(z) = \frac{\rho_0}{\pi R_f^2(z)},
 \end{equation}
 where $\rho_0 := \{ \mathsf{filament\_resistivity} \}$ is the filament volume
-resistivity, $R_f(z)$ is its radius.
+resistivity, and $R_f(z)$ is its radius.
 
 After discretization, the linear resistivity~$r_c(z)$ is represented by $r_c(z_i)$
-at the points $z_i = i \delta$. If $z_i \in \overline\Omega_T \cup
-	\overline\Omega_G$, then $r_c(z_i) = 0$. Otherwise $r_c(z_i)$ depends on whether
-the filament is formed at $z = z_i$ or not.
+at the points $z_i = i \delta$. If
+$z_i \in \overline\Omega_T \cup \overline\Omega_G$, then $r_c(z_i) = 0$.
+Otherwise, $r_c(z_i)$ depends on whether the filament is formed at $z = z_i$
+or not.
 
 We assume that the filament has radial symmetry. Its shape is described by the
 filament radius function~$R_f(z)$. It is defined as follows:
@@ -455,12 +491,21 @@ where the total resistance~$R$ is:
 	\frac{r_c(z_{N - 1})}{2} \right] \delta.
 \end{equation}
 
-
-% --------------------------------------------------------------------------------
-%\section*{Interpolation between meshes}
-
 % ================================================================================
 \section{Device simulation algorithm}
+
+To limit the maximum current through the system, we introduce a non-linear
+limiting resistance~$R_\mathrm{lim}(V)$ connected in series with the system, such
+that the total resistance is $R_\mathrm{tot} = R + R_\mathrm{lim}$. Its value is
+adjusted is a self-consistent manner:
+\begin{equation}
+	R_\mathrm{lim}(V) =
+		\begin{cases}
+			0,					& I_m R \geq V, \\
+			\dfrac{V}{I} - R, 	& I_m R < V,
+		\end{cases}
+\end{equation}
+where $I_\mathrm{m}$ is the maximum current, and $V$ is the total bias voltage.
 
 The device simulation proceeds according to the following algorithm:
 
@@ -476,9 +521,9 @@ The device simulation proceeds according to the following algorithm:
 	\item \label{alg:main_compute_shape} \textbf{Main loop.} Compute the filament
 	      shape.
 
-	\item Compute the linear resistance $r_c(z)$; compute
-	      the total current~$I$; compute the linear heat source density $I^2 r_c(z)$;
-	      compute the Poisson equation boundary condition $\phi(0, z)$.
+	\item Compute the linear resistance $r_c(z)$; compute the total current~$I$;
+	      compute the linear heat source density $I^2 r_c(z)$; compute the Poisson
+		  equation boundary condition $\phi(0, z)$.
 
 	\item Solve the heat equation for $T(r, z)$; solve the Poisson equation for
 	      $\phi(r, z)$; interpolate to the Monte-Carlo grid to obtain $T(\vx_i)$
@@ -497,7 +542,7 @@ The device simulation proceeds according to the following algorithm:
 	      $V \gets V + \xi s \Delta t$, where $s := \{ \mathsf{bias\_sweep\_rate} \}$
 	      is the bias voltage sweep rate.
 
-	\item Go to step \ref{alg:main_compute_shape}.
+	\item \underline{Go to} step \ref{alg:main_compute_shape}.
 \end{enumerate}
 
 

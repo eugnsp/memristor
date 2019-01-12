@@ -1,5 +1,5 @@
 #include "simulator.hpp"
-#include "monte_carlo.hpp"
+#include "monte_carlo/monte_carlo.hpp"
 #include "params.hpp"
 
 #include <es_la/dense.hpp>
@@ -51,23 +51,24 @@ void Simulator::init()
 	grid_center_xy_ = static_cast<unsigned int>(system_radius_ / params::grid_spacing);
 	grid_size_xy_ = 1 + 2 * grid_center_xy_;
 	grid_size_z_ = 1 + static_cast<unsigned int>(system_height_ / params::grid_spacing);
-	const auto mc_grid_size = Point3{grid_size_xy_, grid_size_xy_, grid_size_z_};
+	const auto mc_grid_size = Point{grid_size_xy_, grid_size_xy_, grid_size_z_};
 
 	core_heat_.resize(grid_size_z_);
 	core_potential_.resize(grid_size_z_ + 1);
 
 	mc_potential_.resize(mc_grid_size);
-	mc_potential_.set_all(0);
+	mc_potential_.assign(0);
 
 	mc_temp_.resize(mc_grid_size);
-	mc_temp_.set_all(0);
+	mc_temp_.assign(0);
 
 	find_forbidden_grid_regions();
 
 	mc_.define_shape(
 		mc_grid_size,
 		// TODO : use mesh tags
-		[this](Point3 pt) {
+		[this](Point pt)
+		{
 			const auto x = pt.x * params::grid_spacing - params::grid_spacing * grid_center_xy_;
 			const auto y = pt.y * params::grid_spacing - params::grid_spacing * grid_center_xy_;
 			const auto r = std::hypot(x, y);
@@ -82,9 +83,13 @@ void Simulator::init()
 				return false;
 
 			return true;
+		}, [this](Point pt)
+		{
+			const auto z = pt.z * params::grid_spacing;
+			return std::abs(z - system_height_) < params::grid_spacing / 4;
 		});
 
-	mc_.init_uniform(params::initial_filling);
+	mc_.init(params::initial_filling);
 
 	std::cout << "System diameter: " << es_util::au::to_nm(2 * system_radius_) << " nm\n"
 			  << "System height:   " << es_util::au::to_nm(system_height_)

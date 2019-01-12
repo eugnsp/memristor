@@ -31,7 +31,7 @@ inline constexpr auto debye_frequency = 1e13 / 1_sec;
 inline constexpr auto activation_energy = 1.1_evolt;
 
 // Number of steps with fixed temperature and potential
-inline constexpr auto steps_per_round = 2500000u;
+inline constexpr auto steps_per_round = 25'000u;
 
 // Minimum Monte-Carlo step duration
 inline constexpr auto min_step_duration = .25e-3_sec;
@@ -72,8 +72,14 @@ inline constexpr auto heat_source_radius = 2_nm;
 // Bias voltage sweep speed
 inline constexpr auto bias_sweep_rate = 200_volt / 1_sec;
 
-// Maximum bias voltage
-inline constexpr auto max_bias = 3.6_volt;
+// Maximum external bias voltage
+inline constexpr auto max_bias = 3.4_volt;
+
+// Minimum external bias voltage
+//inline constexpr auto min_bias = 3.4_volt;
+
+// Maximum current
+inline constexpr auto max_current = 35e-6_amp;
 
 // TODO: Maximum current
 // inline constexpr auto max_current = 58e-6_amp;
