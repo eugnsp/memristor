@@ -31,7 +31,7 @@ void Simulator::compute_filament_shape(std::vector<unsigned int>& radii) const
 
 				if (r <= grid_center_xy_)
 				{
-					occup[r] += mc_.is_occupied({x, y, z});
+					occup[r] += mc_.grid().is_occupied({x, y, z});
 					total[r] += 1;
 				}
 			}

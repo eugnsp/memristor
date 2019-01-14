@@ -59,7 +59,8 @@ public:
 		const auto height = mesh_br.height();
 
 		system().variable().set_bnd_cond<0>(
-			mesh(), es_fe::Linestring{{0, 0}, {width, 0}, {width, height}, {0, height}},
+			mesh(),
+			es_fe::Linestring{{0, 0}, {width, 0}, {width, height}, {0, height}},
 			params::temperature);
 
 		Base::init();

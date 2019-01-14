@@ -2,10 +2,12 @@
 #include "../params.hpp"
 #include "grid.hpp"
 #include "neighbour.hpp"
+#include "rate.hpp"
 
 #include <es_util/container/fenwick_tree.hpp>
 
 #include <vector>
+#include <utility>
 
 class Rates_table
 {
@@ -13,7 +15,7 @@ private:
 	using Index = unsigned int;
 
 public:
-	Rates_table(const Grid<Index>& grid) : grid_(grid)
+	Rates_table(Rate rate_fn, const Grid<Index>& grid) : rate_fn_(std::move(rate_fn)), grid_(grid)
 	{}
 
 	///////////////////////////////////////////////////////////////////////
@@ -76,21 +78,18 @@ public:
 	//////////////////////////////////////////////////////////////////////
 	//* Modifiers */
 
-	template<class Rate_fn>
-	void init(Rate_fn rate_fn)
+	void init()
 	{
-		init_internal(rate_fn);
-		init_boundary(rate_fn);
+		init_internal();
+		init_boundary();
 	}
 
 	// For the given point iterates over its neighbours and recalculates
 	// 1) internal rates of hops to this point from its neighbours,
 	// 2) boundary rates of hops to/from its boundary neighbours (if any)
-	template<class Rate_fn>
-	void update_rates_for_neighbours_as_src(const Point& dest, bool is_dest_empty, Rate_fn rate_fn)
+	void update_rates_for_neighbours_as_src(const Point& dest, bool is_dest_empty)
 	{
-		for_each_neighbour(dest, [&, this](const Point& src, Neighbour_index n_index)
-		{
+		for_each_neighbour(dest, [&, this](const Point& src, Neighbour_index n_index) {
 			if (!contains(grid_.extents(), src))
 				return;
 
@@ -98,7 +97,7 @@ public:
 			if (is_src_occupied)
 			{
 				const auto ev_index = int_event_index(grid_.occupied_index(src), twin(n_index));
-				int_rates_.set(ev_index, is_dest_empty ? rate_fn(src, dest) : 0);
+				int_rates_.set(ev_index, is_dest_empty ? rate_fn_(src, dest) : 0);
 			}
 
 			if (grid_.is_boundary(src))
@@ -107,13 +106,13 @@ public:
 				if (is_src_occupied)
 				{
 					constexpr auto eta = params::initial_filling;
-					const auto delta_in_rate = (1 - eta) / eta * rate_fn(dest, src);
+					const auto delta_in_rate = (1 - eta) / eta * rate_fn_(dest, src);
 					bnd_rates_.add(ev_index, is_dest_empty ? -delta_in_rate : delta_in_rate);
 				}
 				else
 				{
 					constexpr auto eta = params::initial_filling;
-					const auto delta_out_rate = eta / (1 - eta) * rate_fn(dest, src);
+					const auto delta_out_rate = eta / (1 - eta) * rate_fn_(dest, src);
 					bnd_rates_.add(ev_index, is_dest_empty ? delta_out_rate : -delta_out_rate);
 				}
 				// assert(bnd_rates_[ev_index] >= 0);	// TODO : remove
@@ -124,24 +123,22 @@ public:
 	// For the given point iterates over its neighbours and recalculates
 	// 1) internal rates of hops from this point to its neighbours,
 	// 2) boundary rates of hops to/from this point (if it is a boundary one)
-	template<class Rate_fn>
-	void update_rates_for_neighbours_as_dest(const Point& src, bool is_src_empty, Rate_fn rate_fn)
+	void update_rates_for_neighbours_as_dest(const Point& src, bool is_src_empty)
 	{
 		if (!is_src_empty)
 		{
 			const auto index = grid_.occupied_index(src);
-			for_each_neighbour(src, [&, this](const Point& dest, Neighbour_index n_index)
-			{
+			for_each_neighbour(src, [&, this](const Point& dest, Neighbour_index n_index) {
 				const auto ev_index = int_event_index(index, n_index);
 				const auto is_dest_empty = contains(grid_.extents(), dest) && grid_.is_empty(dest);
-				int_rates_.set(ev_index, is_dest_empty ? rate_fn(src, dest) : 0);
+				int_rates_.set(ev_index, is_dest_empty ? rate_fn_(src, dest) : 0);
 			});
 		}
 
 		if (grid_.is_boundary(src))
 		{
 			const auto ev_index = bnd_event_index(grid_.boundary_index(src));
-			bnd_rates_.set(ev_index, boundary_rate(src, is_src_empty, rate_fn));
+			bnd_rates_.set(ev_index, boundary_rate(src, is_src_empty));
 		}
 	}
 
@@ -194,16 +191,14 @@ private:
 		return bnd_event_index(grid_.n_boundary());
 	}
 
-	template<class Rate_fn>
-	double boundary_rate(const Point& src, bool is_src_empty, Rate_fn&& rate_fn)
+	double boundary_rate(const Point& src, bool is_src_empty)
 	{
 		if (is_src_empty)
 		{
 			double out_rate = 0;
-			for_each_neighbour(src, [&, this](const Point& dest, Neighbour_index)
-			{
+			for_each_neighbour(src, [&, this](const Point& dest, Neighbour_index) {
 				if (contains(grid_.extents(), dest) && grid_.is_empty(dest))
-					out_rate += rate_fn(src, dest);
+					out_rate += rate_fn_(src, dest);
 			});
 
 			return params::initial_filling / (1 - params::initial_filling) * out_rate;
@@ -211,18 +206,16 @@ private:
 		else
 		{
 			double in_rate = 0;
-			for_each_neighbour(src, [&, this](const Point& dest, Neighbour_index)
-			{
+			for_each_neighbour(src, [&, this](const Point& dest, Neighbour_index) {
 				if (contains(grid_.extents(), dest) && grid_.is_occupied(dest))
-					in_rate += rate_fn(dest, src);
+					in_rate += rate_fn_(dest, src);
 			});
 
 			return (1 - params::initial_filling) / params::initial_filling * in_rate;
 		}
 	}
 
-	template<class Rate_fn>
-	void init_internal(Rate_fn rate_fn)
+	void init_internal()
 	{
 		std::vector<double> rates(n_int_events(), 0);
 
@@ -233,7 +226,7 @@ private:
 				if (contains(grid_.extents(), dest) && grid_.is_empty(dest))
 				{
 					const auto ev_index = int_event_index(occup_index, n_index);
-					rates[ev_index] = rate_fn(src, dest);
+					rates[ev_index] = rate_fn_(src, dest);
 				}
 			});
 		}
@@ -241,21 +234,21 @@ private:
 		int_rates_.reset(std::move(rates));
 	}
 
-	template<class Rate_fn>
-	void init_boundary(Rate_fn rate_fn)
+	void init_boundary()
 	{
 		std::vector<double> rates(n_bnd_events(), 0);
 
 		for (auto& src : grid_.boundary_points())
 		{
 			const auto ev_index = bnd_event_index(grid_.boundary_index(src));
-			rates[ev_index] = boundary_rate(src, grid_.is_empty(src), rate_fn);
+			rates[ev_index] = boundary_rate(src, grid_.is_empty(src));
 		}
 
 		bnd_rates_.reset(std::move(rates));
 	}
 
 private:
+	const Rate rate_fn_;
 	const Grid<Index>& grid_;
 
 	// Rates of hopping events inside the system

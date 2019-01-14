@@ -21,8 +21,8 @@ inline Neighbour_index twin(Neighbour_index neighbour)
 inline Point neighbour(const Point& point, Neighbour_index neighbour)
 {
 	constexpr auto m1 = static_cast<unsigned int>(-1);
-	static constexpr Point neighbours[] = {{1, 0, 0},  {m1, 0, 0}, {0, 1, 0},
-										   {0, m1, 0}, {0, 0, 1},  {0, 0, m1}};
+	static constexpr Point neighbours[] = {
+		{1, 0, 0}, {m1, 0, 0}, {0, 1, 0}, {0, m1, 0}, {0, 0, 1}, {0, 0, m1}};
 
 	assert(neighbour < n_neighbours);
 	return point + neighbours[*neighbour];

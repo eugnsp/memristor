@@ -65,9 +65,9 @@ public:
 	Poisson_dirichlet_core(
 		const es_fe::Mesh2& mesh,
 		const es_fe::Linestring& ls,
-		const std::vector<double>& core_potential) :
+		const std::vector<double>& potential) :
 		Poisson_dirichlet(mesh, ls),
-		core_potential_(core_potential)
+		potential_(potential)
 	{
 		// Remove the first and the last points, they belong to the electrodes
 		vertices_.erase(vertices_.begin());
@@ -78,22 +78,26 @@ public:
 	// from z-grid mid-points (i + 1/2), at which the core potential is defined
 	double value(const es_fe::Point& pt) const
 	{
-		using params::grid_spacing;
-
 		assert(es_fe::is_geom_equal(pt.x(), 0));
 
-		const auto z = pt.y() - grid_spacing / 2;
-		if (z <= 0)
-			return core_potential_.front();
+		auto z = pt.y() / params::grid_spacing + .5;
+		const auto n = potential_.size() - 2;
 
-		const auto index = static_cast<std::size_t>(z / grid_spacing);
-		if (index + 1 >= core_potential_.size())
-			return core_potential_.back();
+		const auto index = static_cast<std::size_t>(z);
+		double alpha = z - index;
 
-		const auto alpha = z / grid_spacing - index;
-		return (1 - alpha) * core_potential_[index] + alpha * core_potential_[index + 1];
+		// First and last points are special: they are z-grid points, not mid-points
+		if (z < 1)
+			alpha = 2 * alpha - 1;
+		else if (z > n)
+			alpha = 2 * alpha;
+
+		assert(-.00001 < alpha && alpha < 1.00001);
+		assert(index <= n);
+
+		return (1 - alpha) * potential_[index] + alpha * potential_[index + 1];
 	}
 
 private:
-	const std::vector<double>& core_potential_;
+	const std::vector<double>& potential_;
 };

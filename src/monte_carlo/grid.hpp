@@ -2,7 +2,6 @@
 #include "point.hpp"
 #include "tensor.hpp"
 
-#include <es_la/io/matfile_writer.hpp>
 #include <es_util/iterator.hpp>
 
 #include <algorithm>
@@ -74,8 +73,7 @@ public:
 		for (const auto& point : occupied_)
 			sites_[point].occup_index = index_empty;
 
-		const auto n_available =
-			sites_.count_if([this](const Site& site) { return is_empty(site); });
+		const auto n_available = sites_.count_if(is_empty_site);
 		const auto n_to_fill = static_cast<Index>(filling * n_available);
 		assert(n_to_fill > 0);
 
@@ -83,7 +81,7 @@ public:
 		available.reserve(n_available);
 
 		sites_.for_each([this, &available](const Site& site, const Point& point) {
-			if (is_empty(site))
+			if (is_empty_site(site))
 				available.push_back(point);
 		});
 
@@ -103,7 +101,7 @@ public:
 	Index occupied_index(const Point& point) const
 	{
 		const auto site = sites_[point];
-		assert(is_occupied(site));
+		assert(is_occupied_site(site));
 
 		return site.occup_index;
 	}
@@ -118,7 +116,7 @@ public:
 	Index boundary_index(const Point& point) const
 	{
 		const auto site = sites_[point];
-		assert(is_boundary(site));
+		assert(is_boundary_site(site));
 
 		return site.bnd_index;
 	}
@@ -129,27 +127,30 @@ public:
 		return boundary_[index];
 	}
 
+	//////////////////////////////////////////////////////////////////////
+	//* Flags */
+
 	// Checks whether the given point belongs to the grid (then it is either empty or occupied)
 	bool is_valid(const Point& point) const
 	{
-		return is_valid(sites_[point]);
+		return is_valid_site(sites_[point]);
 	}
 
 	// Checks whether the given point is empty
 	bool is_empty(const Point& point) const
 	{
-		return is_empty(sites_[point]);
+		return is_empty_site(sites_[point]);
 	}
 
 	// Checks whether the given point is occupied
 	bool is_occupied(const Point& point) const
 	{
-		return is_occupied(sites_[point]);
+		return is_occupied_site(sites_[point]);
 	}
 
 	bool is_boundary(const Point& point) const
 	{
-		return is_boundary(sites_[point]);
+		return is_boundary_site(sites_[point]);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -205,31 +206,6 @@ public:
 		std::swap(index, sites_[last_point].occup_index);
 	}
 
-	void write_occupied(const std::string& file_name) const
-	{
-		la::Matfile_writer mat_file(file_name);
-
-		const auto n = n_occupied();
-		std::vector<unsigned int> x(n), y(n), z(n);
-
-		for (Index index = 0; index < n; ++index)
-		{
-			const auto& point = occupied_[index];
-			x[index] = point.x;
-			y[index] = point.y;
-			z[index] = point.z;
-		}
-
-		mat_file.write("x", x);
-		mat_file.write("y", y);
-		mat_file.write("z", z);
-	}
-
-	Site _site(Point pt) const
-	{
-		return sites_[pt];
-	}
-
 private:
 	// Dummy index value of `occup_index` to denote points outside the system boundary
 	// and of `bnd_index` to denote non-boundary points
@@ -241,22 +217,22 @@ private:
 	static constexpr auto max_occup_index = index_empty - 1;
 
 private:
-	static bool is_valid(Site site)
+	static bool is_valid_site(Site site)
 	{
 		return site.occup_index != index_invalid;
 	}
 
-	static bool is_empty(Site site)
+	static bool is_empty_site(Site site)
 	{
 		return site.occup_index == index_empty;
 	}
 
-	static bool is_occupied(Site site)
+	static bool is_occupied_site(Site site)
 	{
 		return site.occup_index <= max_occup_index;
 	}
 
-	bool is_boundary(Site site) const
+	bool is_boundary_site(Site site) const
 	{
 		return site.bnd_index != index_invalid;
 	}

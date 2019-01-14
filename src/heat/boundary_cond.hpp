@@ -17,8 +17,9 @@ public:
 		std::tie(vertices_, halfedges_) = es_fe::vertices_and_halfedges_in_linestrip(ls, mesh);
 
 		std::transform(
-			halfedges_.begin(), halfedges_.end(), std::back_inserter(edges_),
-			[](auto halfedge) { return edge(halfedge); });
+			halfedges_.begin(), halfedges_.end(), std::back_inserter(edges_), [](auto halfedge) {
+				return edge(halfedge);
+			});
 	}
 
 	static constexpr bool is_essential()

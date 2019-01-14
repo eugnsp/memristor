@@ -37,6 +37,29 @@ void Simulator::init_meshes(const char* mesh_file)
 	std::copy_if(heat_tags_.begin(), heat_tags_.end(), poisson_tags_.begin(), tag_filter);
 }
 
+void Simulator::init_metallic_regions()
+{
+	metallic_regions_.resize(grid_size_z_, false);
+
+	for (const auto& face : poisson_mesh_.faces())
+	{
+		const auto tag = poisson_tags_[**face];
+		if (tag != params::Tags::TIP && tag != params::Tags::GRANULE)
+			continue;
+
+		const auto br = bounding_rect(face);
+
+		const auto z_min = static_cast<unsigned int>(
+			std::floor(std::max(0., (br.bottom() - es_fe::delta) / params::grid_spacing)));
+		const auto z_max = std::min(
+			grid_size_z_ - 1, static_cast<unsigned int>(
+								  std::ceil((br.top() + es_fe::delta) / params::grid_spacing)));
+
+		for (auto z = z_min; z <= z_max; ++z)
+			metallic_regions_[z] = true;
+	}
+}
+
 void Simulator::init_monte_carlo()
 {
 	const auto mc_grid_size = Point{grid_size_xy_, grid_size_xy_, grid_size_z_};
@@ -76,7 +99,7 @@ void Simulator::init()
 	core_potential_.resize(grid_size_z_ + 1);
 
 	init_monte_carlo();
-	find_forbidden_grid_regions();
+	init_metallic_regions();
 
 	std::cout << "System diameter: " << es_util::au::to_nm(2 * system_radius_) << " nm\n"
 			  << "System height:   " << es_util::au::to_nm(system_height_)

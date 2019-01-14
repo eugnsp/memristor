@@ -4,6 +4,7 @@ AlignAfterOpenBracket: AlwaysBreak
 AllowAllParametersOfDeclarationOnNextLine: true
 AllowShortFunctionsOnASingleLine: None
 AlwaysBreakTemplateDeclarations: true
+BinPackArguments: false
 BinPackParameters: false
 BraceWrapping:
  AfterClass: true
