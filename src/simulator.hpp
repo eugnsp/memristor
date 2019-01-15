@@ -66,8 +66,11 @@ public:
 		bias_ = external_bias;
 		for (unsigned int i = 0; ; ++i)
 		{
-			printer.num(i);
-			printer.value(time, 1e-3_sec);
+			if (i % 20 == 0)
+				printer.header();
+
+			printer(i + 1, 1u, 5);
+			printer(time, 1e-3_sec);
 
 			// Step 3
 			compute_filament_shape(filament_shape);
@@ -79,12 +82,12 @@ public:
 			compute_potential_and_heat(filament_shape);
 			const auto current = bias_ / resistance_;
 
-			printer.value(filament_volume);
-			printer.value(external_bias, 1_volt);
-			printer.value(bias_, 1_volt);
-			printer.value(current, 1e-6_amp);
-			printer.value(resistance_, 1e3_ohm);
-			printer.value(limiting_resistance, 1e3_ohm);
+			printer(filament_volume);
+			printer(external_bias, 1_volt);
+			printer(bias_, 1_volt);
+			printer(current, 1e-6_amp);
+			printer(resistance_, 1e3_ohm);
+			printer(limiting_resistance, 1e3_ohm);
 
 			// Step 5
 			heat_solver.solve();
@@ -96,7 +99,7 @@ public:
 			// Step 6
 			double time_step = params::min_step_duration;
 			double est_step_duration = mc_.estimate_step_duration();
-			printer.value(est_step_duration, 1e-6_sec, 13);
+			printer(est_step_duration, 1e-6_sec, 13);
 
 			if (est_step_duration < time_step)
 			{
@@ -104,12 +107,12 @@ public:
 				const auto mc_res = mc_.run(params::steps_per_round, time_step);
 				time_step = mc_res.second;
 
-				printer.value(mc_res.first);
+				printer(mc_res.first);
 			}
 			else
-				printer.value(0);
+				printer(0);
 
-			printer.value(mc_.grid().n_occupied());
+			printer(mc_.grid().n_occupied());
 			printer.endl();
 
 			{
