@@ -1,10 +1,10 @@
 #pragma once
-#include "params.hpp"
-#include "poisson/solver.hpp"
 #include "heat/solver.hpp"
 #include "interpolate.hpp"
 #include "monte_carlo/monte_carlo.hpp"
 #include "monte_carlo/rate.hpp"
+#include "params.hpp"
+#include "poisson/solver.hpp"
 #include "printer.hpp"
 
 #include <es_la/dense.hpp>
@@ -19,19 +19,6 @@
 #include <iomanip>
 #include <limits>
 #include <numeric>
-
-inline std::string fname(std::string prefix, unsigned int index)
-{
-	char name[200];
-	sprintf(name, "mat/%s%.3d.mat", prefix.c_str(), index);
-	return std::string{name};
-}
-
-inline double get_limiting_resistance(double external_bias, double system_resistance)
-{
-	const auto resistance = std::abs(external_bias) / params::max_current - system_resistance;
-	return std::max(0., resistance);
-}
 
 class Simulator
 {
@@ -54,7 +41,7 @@ public:
 
 		// Step 2
 		double external_bias = 0;
-		double limiting_resistance = 0;
+		double lim_resistance = 0;
 		double time = 0;
 		unsigned int sweep = 0;
 
@@ -69,7 +56,7 @@ public:
 			if (i % 20 == 0)
 				printer.header();
 
-			printer(i + 1, 1u, 5);
+			printer(i + 1, 1, 5);
 			printer(time, 1e-3_sec);
 
 			// Step 3
@@ -87,7 +74,7 @@ public:
 			printer(bias_, 1_volt);
 			printer(current, 1e-6_amp);
 			printer(resistance_, 1e3_ohm);
-			printer(limiting_resistance, 1e3_ohm);
+			printer(lim_resistance, 1e3_ohm);
 
 			// Step 5
 			heat_solver.solve();
@@ -106,7 +93,6 @@ public:
 				// Step 7
 				const auto mc_res = mc_.run(params::steps_per_round, time_step);
 				time_step = mc_res.second;
-
 				printer(mc_res.first);
 			}
 			else
@@ -125,15 +111,20 @@ public:
 				mw.write("i", currents);
 				mw.write("t", time_steps);
 
-				mc_.write(fname("m", i));
-				poisson_solver.write(fname("p", i));
-				heat_solver.write(fname("h", i));
+				auto name = std::to_string(i);
+				if (name.length() < 3)
+					name.insert(0, 3 - name.length(), '0');
+
+				mc_.write("mat/m" + name + ".mat");
+				poisson_solver.write("mat/p" + name + ".mat");
+				heat_solver.write("mat/h" + name + ".mat");
 			}
 
 			// Step 8
 			external_bias += (sweep == 1 ? -1 : 1) * time_step * params::bias_sweep_rate;
-			const auto limiting_resistance = get_limiting_resistance(external_bias, resistance_);
-			bias_ = external_bias - limiting_resistance * current;
+
+			lim_resistance = limiting_resistance(external_bias);
+			bias_ = external_bias - lim_resistance * current;
 
 			time += time_step;
 
@@ -155,6 +146,12 @@ private:
 
 	void compute_filament_shape(std::vector<unsigned int>&) const;
 	void compute_potential_and_heat(const std::vector<unsigned int>& filament_shape);
+
+	double limiting_resistance(double external_bias) const
+	{
+		const auto resistance = std::abs(external_bias) / params::max_current - resistance_;
+		return std::max(0., resistance);
+	}
 
 private:
 	es_fe::Mesh2 poisson_mesh_;

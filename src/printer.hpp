@@ -1,4 +1,6 @@
 #pragma once
+#include <es_util/type_traits.hpp>
+
 #include <iomanip>
 #include <ostream>
 
@@ -11,7 +13,7 @@ public:
 	}
 
 	template<typename T>
-	void operator()(T value, T scale = 1, unsigned int width = 10)
+	void operator()(T value, es_util::Identity_t<T> scale = 1, unsigned int width = 10)
 	{
 		os_ << std::setw(width - 1) << value / scale << ' ' << std::flush;
 	}
