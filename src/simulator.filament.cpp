@@ -75,14 +75,15 @@ void Simulator::compute_potential_and_heat(const std::vector<unsigned int>& fila
 		resistivity.begin() + 1, resistivity.end() - 1,
 		(resistivity.front() + resistivity.back()) / 2);
 
-	current_ = bias_ / (params::grid_spacing * total_resistivity);
+	resistance_ = params::grid_spacing * total_resistivity;
+	const auto current = bias_ / resistance_;
 
 	// Compute heat source linear density
 	assert(core_heat_.size() == grid_size_z_);
 	assert(core_potential_.size() == grid_size_z_ + 1);
 
 	for (auto z = 0u; z < grid_size_z_; ++z)
-		core_heat_[z] = es_util::sq(current_) * resistivity[z];
+		core_heat_[z] = es_util::sq(current) * resistivity[z];
 
 	// Compute potential
 	double acc_resistivity = resistivity.front() / 2;
@@ -90,7 +91,7 @@ void Simulator::compute_potential_and_heat(const std::vector<unsigned int>& fila
 	core_potential_.front() = 0;
 	for (auto z = 1u; z < grid_size_z_; ++z)
 	{
-		core_potential_[z] = current_ * params::grid_spacing * acc_resistivity;
+		core_potential_[z] = current * params::grid_spacing * acc_resistivity;
 		acc_resistivity += resistivity[z];
 	}
 	core_potential_.back() = bias_;
