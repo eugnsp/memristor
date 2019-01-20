@@ -79,7 +79,7 @@ inline constexpr auto max_bias = 3.4_volt;
 //inline constexpr auto min_bias = 3.4_volt;
 
 // Maximum current
-inline constexpr auto max_current = 35e-6_amp;
+inline constexpr auto max_current = 25e-6_amp;
 
 // TODO: Maximum current
 // inline constexpr auto max_current = 58e-6_amp;
