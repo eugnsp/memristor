@@ -2,8 +2,11 @@ clear variables
 
 input_path = "../build/mat"
 
-% load([input_path '/p001.mat'])
-load([input_path '/h001.mat'])
+graphics_toolkit fltk
+
+k = 1;
+file = [input_path "/h" num2str(k, "%.3d") ".mat"];
+load(file)
 
 x = vertices(1, :)';
 y = vertices(2, :)';
@@ -14,9 +17,12 @@ y_m = max(y);
 tri = double(faces');
 z = data;
 
-% graphics_toolkit gnuplot
 figure
+hold off
 trisurf(tri, x, y, z, 'FaceColor', 'interp')
+hold on
+trisurf(tri, -x, y, z, 'FaceColor', 'interp')
+view(2)
 
 % figure
 % hold off
@@ -31,5 +37,8 @@ colorbar
 xlabel('r [nm]')
 ylabel('z [nm]')
 
-xlim([0 x_m])
-ylim([0 y_m])
+xlim([-x_m x_m])
+ylim([0 40])
+caxis([300 650])
+  
+title('Temperature distribution')

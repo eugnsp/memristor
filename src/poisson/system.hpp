@@ -1,6 +1,7 @@
 #pragma once
 #include "boundary_cond.hpp"
 
+#include <es_fe/var.hpp>
 #include <es_fe/var_list.hpp>
 #include <es_fe/system.hpp>
 #include <es_fe/element/lagrange.hpp>

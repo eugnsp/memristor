@@ -84,7 +84,7 @@ public:
 			interpolate(poisson_solver.solution_view(), mc_potential_);
 
 			// Step 6
-			double time_step = params::min_step_duration;
+			double time_step = params::max_step_duration;
 			double est_step_duration = mc_.estimate_step_duration();
 			printer(est_step_duration, 1e-6_sec, 13);
 
