@@ -1,15 +1,14 @@
 #pragma once
 #include "boundary_cond.hpp"
+#include "element.hpp"
 
 #include <es_fe/var.hpp>
 #include <es_fe/var_list.hpp>
 #include <es_fe/system.hpp>
-#include <es_fe/element/lagrange.hpp>
 #include <es_fe/dof/dof_mapper.hpp>
 
 #include <string>
 
-using Poisson_element = es_fe::Lagrange<1, 2>;
 using Poisson_var = es_fe::Var<
 	Poisson_element,
 	1,

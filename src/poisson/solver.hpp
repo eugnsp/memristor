@@ -74,19 +74,18 @@ public:
 private:
 	virtual void set_bnd_values() override
 	{
-		system().variable().for_each_ess_bnd_cond([this](const auto& bc) {
-			for (auto vertex = bc.begin_vertex(); vertex != bc.end_vertex(); ++vertex)
+		system().variable().for_each_ess_bnd_cond([this](const auto& bc)
+		{
+			for (auto& vertex : bc.vertices())
 			{
 				typename System::template Var_vertex_dofs<0> vertex_dofs;
-				system().dof_mapper().template vertex_dofs<0>(*vertex, vertex_dofs);
-				// vertex_dof_indices.resize(vertex_dofs.rows(), vertex_dofs.cols());
+				system().dof_mapper().template vertex_dofs<0>(vertex, vertex_dofs);
 
-				for (std::size_t j = 0; j < vertex_dofs.cols(); ++j)
-					for (std::size_t i = 0; i < vertex_dofs.rows(); ++i)
-					{
-						assert(vertex_dofs(i, j).is_free == false);
-						solution_[vertex_dofs(i, j).index] = bc.value(mesh().vertex(*vertex));
-					}
+				for (std::size_t i = 0; i < vertex_dofs.size(); ++i)
+				{
+					assert(vertex_dofs[i].is_free == false);
+					solution_[vertex_dofs[i].index] = bc.value(mesh().vertex(vertex));
+				}
 			}
 		});
 	}

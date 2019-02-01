@@ -70,13 +70,12 @@ public:
 private:
 	virtual void set_bnd_values() override
 	{
-		system().variable().for_each_ess_bnd_cond([this](const auto& bc) {
-			typename System::template Var_vertex_dofs<0> vertex_dofs;
-			typename System::template Var_edge_dofs<0> edge_dofs;
-
-			for (auto vertex = bc.begin_vertex(); vertex != bc.end_vertex(); ++vertex)
+		system().variable().for_each_ess_bnd_cond([this](const auto& bc)
+		{
+			for (auto& vertex : bc.vertices())
 			{
-				system().dof_mapper().template vertex_dofs<0>(*vertex, vertex_dofs);
+				typename System::template Var_vertex_dofs<0> vertex_dofs;
+				system().dof_mapper().template vertex_dofs<0>(vertex, vertex_dofs);
 				for (std::size_t j = 0; j < vertex_dofs.cols(); ++j)
 					for (std::size_t i = 0; i < vertex_dofs.rows(); ++i)
 					{
@@ -87,9 +86,10 @@ private:
 
 			if constexpr (Element::has_edge_dofs)
 			{
-				for (auto edge = bc.begin_edge(); edge != bc.end_edge(); ++edge)
+				for (auto& halfedge : bc.halfedges())
 				{
-					system().dof_mapper().template edge_dofs<0>(*edge, edge_dofs);
+					typename System::template Var_edge_dofs<0> edge_dofs;
+					system().dof_mapper().template edge_dofs<0>(edge(halfedge), edge_dofs);
 					for (std::size_t j = 0; j < edge_dofs.cols(); ++j)
 						for (std::size_t i = 0; i < edge_dofs.rows(); ++i)
 						{

@@ -1,9 +1,10 @@
 #pragma once
 #include "../params.hpp"
+#include "element.hpp"
 
 #include <es_fe/types.hpp>
 #include <es_fe/mesh/mesh2.hpp>
-#include <es_fe/mesh/algorithm/vertices_in_linestrip.hpp>
+#include <es_fe/boundary_cond.hpp>
 
 #include <es_fe/geom/compare.hpp>
 #include <es_fe/geom/linestring.hpp>
@@ -13,65 +14,21 @@
 #include <cstddef>
 #include <vector>
 
-class Poisson_dirichlet
-{
-public:
-	Poisson_dirichlet(const es_fe::Mesh2& mesh, const es_fe::Linestring& ls)
-	{
-		vertices_ = es_fe::vertices_in_linestrip(ls, mesh);
-	}
+using Poisson_dirichlet_const = es_fe::Const_boundary_cond<Poisson_element, true>;
 
-	static constexpr bool is_essential()
-	{
-		return true;
-	}
-
-	auto begin_vertex() const
-	{
-		return vertices_.begin();
-	}
-
-	auto end_vertex() const
-	{
-		return vertices_.end();
-	}
-
-protected:
-	std::vector<es_fe::Vertex_index> vertices_;
-};
-
-class Poisson_dirichlet_const : public Poisson_dirichlet
-{
-public:
-	using Poisson_dirichlet::Poisson_dirichlet;
-
-	double value(const es_fe::Point&) const
-	{
-		return value_;
-	}
-
-	void set_value(double value)
-	{
-		value_ = value;
-	}
-
-private:
-	double value_;
-};
-
-class Poisson_dirichlet_core : public Poisson_dirichlet
+class Poisson_dirichlet_core : public es_fe::Boundary_cond<Poisson_element, true>
 {
 public:
 	Poisson_dirichlet_core(
 		const es_fe::Mesh2& mesh,
-		const es_fe::Linestring& ls,
+		const es_fe::Linestring& boundary,
 		const std::vector<double>& potential) :
-		Poisson_dirichlet(mesh, ls),
+		Boundary_cond(mesh, boundary),
 		potential_(potential)
 	{
 		// Remove the first and the last points, they belong to the electrodes
-		vertices_.erase(vertices_.begin());
-		vertices_.pop_back();
+		this->vertices_.erase(this->vertices_.begin());
+		this->vertices_.pop_back();
 	}
 
 	// Returns the boundary value at a given point using linear interpolation

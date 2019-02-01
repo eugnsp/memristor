@@ -4,8 +4,8 @@ input_path = "../build/mat"
 
 graphics_toolkit fltk
 
-k = 1;
-file = [input_path "/h" num2str(k, "%.3d") ".mat"];
+k = 5;
+file = [input_path "/p" num2str(k, "%.3d") ".mat"];
 load(file)
 
 x = vertices(1, :)';
@@ -20,9 +20,9 @@ z = data;
 figure
 hold off
 trisurf(tri, x, y, z, 'FaceColor', 'interp')
-hold on
-trisurf(tri, -x, y, z, 'FaceColor', 'interp')
-view(2)
+%hold on
+%trisurf(tri, -x, y, z, 'FaceColor', 'interp')
+%view(2)
 
 % figure
 % hold off
@@ -39,6 +39,6 @@ ylabel('z [nm]')
 
 xlim([-x_m x_m])
 ylim([0 40])
-caxis([300 650])
+%caxis([300 650])
   
 title('Temperature distribution')
