@@ -9,7 +9,7 @@
 #include <string>
 
 using Heat_element = es_fe::Lagrange<1, 2>;
-using Heat_dirichlet = es_fe::Const_boundary_cond<Heat_element, true>;
+using Heat_dirichlet = es_fe::Uniform_boundary_cond<Heat_element>;
 using Heat_var = es_fe::Var<Heat_element, 1, Heat_dirichlet>;
 
 class Heat_system final : public es_fe::System<es_fe::Var_list<Heat_var>, es_fe::Dof_mapper>

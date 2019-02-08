@@ -76,12 +76,11 @@ private:
 			{
 				typename System::template Var_vertex_dofs<0> vertex_dofs;
 				system().dof_mapper().template vertex_dofs<0>(vertex, vertex_dofs);
-				for (std::size_t j = 0; j < vertex_dofs.cols(); ++j)
-					for (std::size_t i = 0; i < vertex_dofs.rows(); ++i)
-					{
-						assert(vertex_dofs(i, j).is_free == false);
-						solution_[vertex_dofs(i, j).index] = bc.value();
-					}
+				for (es_fe::Local_index i = 0; i < vertex_dofs.size(); ++i)
+				{
+					assert(!vertex_dofs[i].is_free);
+					solution_[vertex_dofs[i].index] = bc.value();
+				}
 			}
 
 			if constexpr (Element::has_edge_dofs)
@@ -90,12 +89,11 @@ private:
 				{
 					typename System::template Var_edge_dofs<0> edge_dofs;
 					system().dof_mapper().template edge_dofs<0>(edge(halfedge), edge_dofs);
-					for (std::size_t j = 0; j < edge_dofs.cols(); ++j)
-						for (std::size_t i = 0; i < edge_dofs.rows(); ++i)
-						{
-							assert(edge_dofs(i, j).is_free == false);
-							solution_[edge_dofs(i, j).index] = bc.value();
-						}
+					for (es_fe::Local_index i = 0; i < edge_dofs.size(); ++i)
+					{
+						assert(!edge_dofs[i].is_free);
+						solution_[edge_dofs[i].index] = bc.value();
+					}
 				}
 			}
 		});

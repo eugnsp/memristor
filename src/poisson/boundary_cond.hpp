@@ -14,9 +14,9 @@
 #include <cstddef>
 #include <vector>
 
-using Poisson_dirichlet_const = es_fe::Const_boundary_cond<Poisson_element, true>;
+using Poisson_dirichlet_contact = es_fe::Uniform_boundary_cond<Poisson_element>;
 
-class Poisson_dirichlet_core : public es_fe::Boundary_cond<Poisson_element, true>
+class Poisson_dirichlet_core final : public es_fe::Boundary_cond<Poisson_element>
 {
 public:
 	Poisson_dirichlet_core(

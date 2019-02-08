@@ -81,9 +81,9 @@ private:
 				typename System::template Var_vertex_dofs<0> vertex_dofs;
 				system().dof_mapper().template vertex_dofs<0>(vertex, vertex_dofs);
 
-				for (std::size_t i = 0; i < vertex_dofs.size(); ++i)
+				for (es_fe::Local_index i = 0; i < vertex_dofs.size(); ++i)
 				{
-					assert(vertex_dofs[i].is_free == false);
+					assert(!vertex_dofs[i].is_free);
 					solution_[vertex_dofs[i].index] = bc.value(mesh().vertex(vertex));
 				}
 			}
@@ -147,7 +147,7 @@ public:
 	void write(const std::string& file_name)
 	{
 		using namespace es_util::au::literals;
-		//		return;
+		return;
 
 		la::Vector_xd phi(*mesh().n_vertices(), 0);
 

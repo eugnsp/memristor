@@ -2,7 +2,7 @@ clear variables
 
 input_path = "../build/mat"
 
-graphics_toolkit fltk
+%graphics_toolkit fltk
 
 k = 5;
 file = [input_path "/p" num2str(k, "%.3d") ".mat"];
@@ -38,7 +38,7 @@ xlabel('r [nm]')
 ylabel('z [nm]')
 
 xlim([-x_m x_m])
-ylim([0 40])
+%ylim([0 40])
 %caxis([300 650])
   
 title('Temperature distribution')

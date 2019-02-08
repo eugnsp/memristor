@@ -12,8 +12,8 @@
 using Poisson_var = es_fe::Var<
 	Poisson_element,
 	1,
-	Poisson_dirichlet_const,
-	Poisson_dirichlet_const,
+	Poisson_dirichlet_contact,
+	Poisson_dirichlet_contact,
 	Poisson_dirichlet_core>;
 
 class Poisson_system final : public es_fe::System<es_fe::Var_list<Poisson_var>, es_fe::Dof_mapper>
