@@ -7,3 +7,9 @@
 [submodule "external/es_util"]
 	path = external/es_util
 	url = https://github.com/eugnsp/es_util.git
+[submodule "external/external/es_util"]
+	path = external/external/es_util
+	url = https://github.com/eugnsp/es_util.git
+[submodule "external/external/es_la"]
+	path = external/external/es_la
+	url = https://github.com/eugnsp/es_la.git
