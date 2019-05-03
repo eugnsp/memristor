@@ -1,11 +1,2 @@
-*.o
-*.obj
-*.so
-*.a
-*.lib
-*.exe
-*.out
 *.json
 build/
-.vscode/
-compile_commands.json

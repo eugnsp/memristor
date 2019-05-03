@@ -106,7 +106,7 @@ public:
 				currents.push_back(es_util::au::to_amp(current) / 1e-6);
 				time_steps.push_back(time_step);
 
-				la::Matfile_writer mw("mat/iv.mat");
+				es_la::Matfile_writer mw("mat/iv.mat");
 				mw.write("v", biases);
 				mw.write("i", currents);
 				mw.write("t", time_steps);
@@ -154,10 +154,10 @@ private:
 	}
 
 private:
-	es_fe::Mesh2 poisson_mesh_;
+	es_fe::Mesh<2> poisson_mesh_;
 	std::vector<unsigned int> poisson_tags_;
 
-	es_fe::Mesh2 heat_mesh_;
+	es_fe::Mesh<2> heat_mesh_;
 	std::vector<unsigned int> heat_tags_;
 
 	double bias_;

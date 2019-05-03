@@ -2,19 +2,17 @@
 #include "system.hpp"
 #include "../params.hpp"
 
-#include <es_la/solver/pardiso_solver.hpp>
+#include <es_la/sparse/solver/pardiso_solver.hpp>
 #include <es_la/io/matfile_writer.hpp>
-#include <es_fe/geom/algorithm.hpp>
-#include <es_fe/math/jacobian.hpp>
+#include <es_fe/geometry.hpp>
+#include <es_fe/math.hpp>
 #include <es_fe/mesh/mesh2.hpp>
 #include <es_fe/matrix_based/solver.hpp>
 
 #include <es_la/function.hpp>
 #include <es_fe/var_list.hpp>
 #include <es_fe/dof/tools.hpp>
-#include <es_fe/math/matrix.hpp>
-#include <es_fe/math/quadr.hpp>
-#include <es_fe/io/matlab_writer.hpp>
+#include <es_fe/io/matlab_writer2.hpp>
 
 #include <algorithm>
 #include <cstddef>
@@ -23,7 +21,7 @@
 
 #include <iostream>
 
-using Poisson_sp_solver = la::Pardiso_solver<la::Sparse_matrix<double, la::Symmetric_upper>>;
+using Poisson_sp_solver = es_la::Pardiso_solver<es_la::Csr_matrix<double, es_la::Symmetric_upper>>;
 
 class Poisson_solver final : public es_fe::Matrix_based_solver<Poisson_system, Poisson_sp_solver>
 {
@@ -38,7 +36,7 @@ public:
 
 public:
 	Poisson_solver(
-		const es_fe::Mesh2& mesh,
+		const es_fe::Mesh<2>& mesh,
 		const std::vector<unsigned int>& tags,
 		const std::vector<double>& core_potential) :
 		Base(mesh),
@@ -97,7 +95,7 @@ public:
 			assemble_on_face(face);
 	}
 
-	void assemble_on_face(const es_fe::Mesh2::Face_view& face)
+	void assemble_on_face(const es_fe::Mesh<2>::Face_view& face)
 	{
 		const auto tag = tags_[**face];
 
@@ -149,7 +147,7 @@ public:
 		using namespace es_util::au::literals;
 		return;
 
-		la::Vector_xd phi(*mesh().n_vertices(), 0);
+		es_la::Vector_xd phi(*mesh().n_vertices(), 0);
 
 		for (es_fe::Vertex_index vertex{0}; vertex < mesh().n_vertices(); ++vertex)
 		{
@@ -158,7 +156,7 @@ public:
 			phi[*vertex] = es_util::au::to_volt(solution_[vertex_dofs[0].index]);
 		}
 
-		es_fe::Matlab_writer m(file_name, mesh(), 1_nm);
+		es_fe::Matlab_writer2 m(file_name, mesh(), 1_nm);
 		m.write_vertex_field("data", phi);
 	}
 

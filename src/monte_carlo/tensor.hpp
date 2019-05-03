@@ -131,7 +131,7 @@ public:
 
 	void write(const std::string& file_name)
 	{
-		la::Matfile_writer mat_file(file_name);
+		es_la::Matfile_writer mat_file(file_name);
 
 		mat_file.write("nx", extents_.x);
 		mat_file.write("ny", extents_.y);

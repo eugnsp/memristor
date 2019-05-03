@@ -5,7 +5,7 @@
 #include "params.hpp"
 #include "tags_as_solution.hpp"
 
-#include <es_fe/geom/compare.hpp>
+#include <es_fe/geometry.hpp>
 #include <es_fe/mesh/io.hpp>
 #include <es_fe/mesh/mesh2.hpp>
 #include <es_fe/mesh/tools/mesh_filter.hpp>

@@ -8,7 +8,7 @@
 template<typename Index>
 inline void write_occupied(const std::string& file_name, const Grid<Index>& grid)
 {
-	la::Matfile_writer mat_file(file_name);
+	es_la::Matfile_writer mat_file(file_name);
 
 	const auto n = grid.n_occupied();
 	std::vector<Point::Type> x(n), y(n), z(n);

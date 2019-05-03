@@ -2,9 +2,7 @@
 #include "params.hpp"
 #include "monte_carlo/tensor.hpp"
 
-#include <es_fe/geom/algorithm.hpp>
-#include <es_fe/geom/compare.hpp>
-#include <es_fe/geom/point.hpp>
+#include <es_fe/geometry.hpp>
 #include <es_util/numeric.hpp>
 
 #include <algorithm>
@@ -49,7 +47,7 @@ void interpolate(
 					const auto xd = static_cast<double>(x) - center_xy;
 					const auto r = es_util::hypot(xd, yd);
 
-					const es_fe::Point pt{r * grid_spacing, z * grid_spacing};
+					const es_fe::Point2 pt{r * grid_spacing, z * grid_spacing};
 					if (contains(face, pt))
 						tensor(x, y, z) = fe_solution(face, pt);
 				}
@@ -59,7 +57,7 @@ void interpolate(
 					const auto xd = static_cast<double>(x) - center_xy;
 					const auto r = es_util::hypot(xd, yd);
 
-					const es_fe::Point pt{r * grid_spacing, z * grid_spacing};
+					const es_fe::Point2 pt{r * grid_spacing, z * grid_spacing};
 					if (contains(face, pt))
 						tensor(x, y, z) = fe_solution(face, pt);
 				}

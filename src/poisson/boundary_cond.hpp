@@ -5,10 +5,7 @@
 #include <es_fe/types.hpp>
 #include <es_fe/mesh/mesh2.hpp>
 #include <es_fe/boundary_cond.hpp>
-
-#include <es_fe/geom/compare.hpp>
-#include <es_fe/geom/linestring.hpp>
-#include <es_fe/geom/point.hpp>
+#include <es_fe/geometry.hpp>
 
 #include <cassert>
 #include <cstddef>
@@ -20,7 +17,7 @@ class Poisson_dirichlet_core final : public es_fe::Boundary_cond<Poisson_element
 {
 public:
 	Poisson_dirichlet_core(
-		const es_fe::Mesh2& mesh,
+		const es_fe::Mesh<2>& mesh,
 		const es_fe::Linestring& boundary,
 		const std::vector<double>& potential) :
 		Boundary_cond(mesh, boundary),
@@ -33,7 +30,7 @@ public:
 
 	// Returns the boundary value at a given point using linear interpolation
 	// from z-grid mid-points (i + 1/2), at which the core potential is defined
-	double value(const es_fe::Point& pt) const
+	double value(const es_fe::Point2& pt) const
 	{
 		assert(es_fe::is_geom_equal(pt.x(), 0));
 

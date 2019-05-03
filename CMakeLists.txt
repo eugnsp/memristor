@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.7)
 project(memristor)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_FLAGS "-Wall -Wpedantic -Wno-psabi -m64 -march=native")
+set(CMAKE_CXX_FLAGS "-Wall -Wpedantic -Werror=return-type -Wno-psabi -m64 -march=native -fmax-errors=1")
 set(CMAKE_CXX_FLAGS_DEBUG "-Wextra -O0 -ggdb3")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
