@@ -5,11 +5,11 @@
 #include "params.hpp"
 #include "tags_as_solution.hpp"
 
-#include <es_fe/geometry.hpp>
-#include <es_fe/mesh/io.hpp>
-#include <es_fe/mesh/mesh2.hpp>
-#include <es_fe/mesh/tools/mesh_filter.hpp>
-#include <es_util/phys.hpp>
+#include <esf/geometry.hpp>
+#include <esf/mesh/io.hpp>
+#include <esf/mesh/mesh2.hpp>
+#include <esf/mesh/tools/mesh_filter.hpp>
+#include <esu/phys.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -19,11 +19,11 @@
 
 void Simulator::init_meshes(const char* mesh_file)
 {
-	using namespace es_util::au::literals;
+	using namespace esu::au::literals;
 
 	const unsigned int physical_tag_index = 1;
-	heat_mesh_ = es_fe::read_gmsh_mesh(mesh_file, 1_nm);
-	heat_tags_ = es_fe::read_gmsh_tags(mesh_file, physical_tag_index);
+	heat_mesh_ = esf::read_gmsh_mesh(mesh_file, 1_nm);
+	heat_tags_ = esf::read_gmsh_tags(mesh_file, physical_tag_index);
 
 	// The mesh for the Poisson equation is obtained from that for the heat equation
 	// by excluding all elements with tag = CONTACT
@@ -32,7 +32,7 @@ void Simulator::init_meshes(const char* mesh_file)
 		return tag_filter(heat_tags_[**face]);
 	};
 
-	poisson_mesh_ = es_fe::mesh_filter_by_faces(heat_mesh_, face_filter);
+	poisson_mesh_ = esf::mesh_filter_by_faces(heat_mesh_, face_filter);
 	poisson_tags_.resize(*poisson_mesh_.n_faces());
 	std::copy_if(heat_tags_.begin(), heat_tags_.end(), poisson_tags_.begin(), tag_filter);
 }
@@ -50,10 +50,10 @@ void Simulator::init_metallic_regions()
 		const auto br = bounding_rect(face);
 
 		const auto z_min = static_cast<unsigned int>(
-			std::floor(std::max(0., (br.bottom() - es_fe::delta) / params::grid_spacing)));
+			std::floor(std::max(0., (br.bottom() - esf::delta) / params::grid_spacing)));
 		const auto z_max = std::min(
 			grid_size_z_ - 1, static_cast<unsigned int>(
-								  std::ceil((br.top() + es_fe::delta) / params::grid_spacing)));
+								  std::ceil((br.top() + esf::delta) / params::grid_spacing)));
 
 		for (auto z = z_min; z <= z_max; ++z)
 			metallic_regions_[z] = true;
@@ -76,7 +76,7 @@ void Simulator::init_monte_carlo()
 	const auto is_boundary_point = [this](const Point& point)
 	{
 		const auto z = point.z * params::grid_spacing;
-		return es_fe::is_geom_equal(std::abs(z - system_height_), 0);
+		return esf::is_geom_equal(std::abs(z - system_height_), 0);
 	};
 
 	mc_.init(available_points, is_boundary_point);
@@ -101,8 +101,8 @@ void Simulator::init()
 	init_monte_carlo();
 	init_metallic_regions();
 
-	std::cout << "System diameter: " << es_util::au::to_nm(2 * system_radius_) << " nm\n"
-			  << "System height:   " << es_util::au::to_nm(system_height_)
+	std::cout << "System diameter: " << esu::au::to_nm(2 * system_radius_) << " nm\n"
+			  << "System height:   " << esu::au::to_nm(system_height_)
 			  << " nm\n\n"
 			  //   << "Poisson/heat FEM mesh file: " << mesh_file << '\n'
 			  << poisson_mesh_ << '\n'

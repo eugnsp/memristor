@@ -1,7 +1,7 @@
 #pragma once
 #include "point.hpp"
 
-#include <es_util/enum_class_index.hpp>
+#include <esu/enum_class_index.hpp>
 
 #include <cassert>
 

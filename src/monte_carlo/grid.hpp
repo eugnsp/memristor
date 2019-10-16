@@ -2,7 +2,7 @@
 #include "point.hpp"
 #include "tensor.hpp"
 
-#include <es_util/iterator.hpp>
+#include <esu/iterator.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -80,7 +80,7 @@ public:
 		std::vector<Point> available;
 		available.reserve(n_available);
 
-		sites_.for_each([this, &available](const Site& site, const Point& point) {
+		sites_.for_each([&available](const Site& site, const Point& point) {
 			if (is_empty_site(site))
 				available.push_back(point);
 		});
@@ -158,12 +158,12 @@ public:
 
 	auto occupied_points() const
 	{
-		return es_util::Iterable{occupied_};
+		return esu::Iterable{occupied_};
 	}
 
 	auto boundary_points() const
 	{
-		return es_util::Iterable{boundary_};
+		return esu::Iterable{boundary_};
 	}
 
 	//////////////////////////////////////////////////////////////////////

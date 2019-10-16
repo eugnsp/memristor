@@ -1,18 +1,18 @@
 #pragma once
-#include "system.hpp"
 #include "../params.hpp"
+#include "system.hpp"
 
-#include <es_la/sparse/solver/pardiso_solver.hpp>
-#include <es_la/io/matfile_writer.hpp>
-#include <es_fe/geometry.hpp>
-#include <es_fe/math.hpp>
-#include <es_fe/mesh/mesh2.hpp>
-#include <es_fe/matrix_based/solver.hpp>
-
-#include <es_la/function.hpp>
-#include <es_fe/var_list.hpp>
-#include <es_fe/dof/tools.hpp>
-#include <es_fe/io/matlab_writer2.hpp>
+#include <esf/dof/tools.hpp>
+#include <esf/geometry.hpp>
+#include <esf/io/matlab_writer2.hpp>
+#include <esf/math.hpp>
+#include <esf/matrix_based/solver.hpp>
+#include <esf/mesh/mesh2.hpp>
+#include <esf/var_list.hpp>
+#include <esl/dense.hpp>
+#include <esl/io/matfile_writer.hpp>
+#include <esl/sparse/solver/pardiso_solver.hpp>
+#include <esu/algorithm.hpp>
 
 #include <algorithm>
 #include <cstddef>
@@ -21,12 +21,12 @@
 
 #include <iostream>
 
-using Poisson_sp_solver = es_la::Pardiso_solver<es_la::Csr_matrix<double, es_la::Symmetric_upper>>;
+using Poisson_sp_solver = esl::Pardiso_solver<esl::Csr_matrix<double, esl::Symmetric_upper>>;
 
-class Poisson_solver final : public es_fe::Matrix_based_solver<Poisson_system, Poisson_sp_solver>
+class Poisson_solver final : public esf::Matrix_based_solver<Poisson_system, Poisson_sp_solver>
 {
 private:
-	using Base = es_fe::Matrix_based_solver<Poisson_system, Poisson_sp_solver>;
+	using Base = esf::Matrix_based_solver<Poisson_system, Poisson_sp_solver>;
 	using System = typename Base::System;
 	using Element = typename System::template Var_t<0>::Element;
 
@@ -36,9 +36,7 @@ public:
 
 public:
 	Poisson_solver(
-		const es_fe::Mesh<2>& mesh,
-		const std::vector<unsigned int>& tags,
-		const std::vector<double>& core_potential) :
+		const esf::Mesh<2>& mesh, const std::vector<unsigned int>& tags, const std::vector<double>& core_potential) :
 		Base(mesh),
 		tags_(tags), core_potential_(core_potential)
 	{
@@ -51,14 +49,12 @@ public:
 		const auto width = mesh_br.width();
 		const auto height = mesh_br.height();
 
-		system().variable().set_bnd_cond<0>(mesh(), es_fe::Linestring{{0, 0}, {width, 0}});
-		system().variable().set_bnd_cond<1>(
-			mesh(), es_fe::Linestring{{0, height}, {width, height}});
-		system().variable().set_bnd_cond<2>(
-			mesh(), es_fe::Linestring{{0, 0}, {0, height}}, core_potential_);
+		system().variable().set_bnd_cond<0>(mesh(), esf::Linestring{{0, 0}, {width, 0}});
+		system().variable().set_bnd_cond<1>(mesh(), esf::Linestring{{0, height}, {width, height}});
+		system().variable().set_bnd_cond<2>(mesh(), esf::Linestring{{0, 0}, {0, height}}, core_potential_);
 
 		Base::init();
-		es_fe::compute_and_set_sparsity_pattern(system(), matrix_);
+		esf::compute_and_set_sparsity_pattern(system(), matrix_);
 	}
 
 	void solve()
@@ -72,14 +68,13 @@ public:
 private:
 	virtual void set_bnd_values() override
 	{
-		system().variable().for_each_ess_bnd_cond([this](const auto& bc)
-		{
+		system().variable().for_each_ess_bnd_cond([this](const auto& bc) {
 			for (auto& vertex : bc.vertices())
 			{
 				typename System::template Var_vertex_dofs<0> vertex_dofs;
 				system().dof_mapper().template vertex_dofs<0>(vertex, vertex_dofs);
 
-				for (es_fe::Local_index i = 0; i < vertex_dofs.size(); ++i)
+				for (esf::Local_index i = 0; i < vertex_dofs.size(); ++i)
 				{
 					assert(!vertex_dofs[i].is_free);
 					solution_[vertex_dofs[i].index] = bc.value(mesh().vertex(vertex));
@@ -95,7 +90,7 @@ public:
 			assemble_on_face(face);
 	}
 
-	void assemble_on_face(const es_fe::Mesh<2>::Face_view& face)
+	void assemble_on_face(const esf::Mesh<2>::Face_view& face)
 	{
 		const auto tag = tags_[**face];
 
@@ -105,32 +100,29 @@ public:
 		const auto eps = is_metal ? metal_eps : 1.;
 		const auto factor = -area(face) * center(face).x() * eps;
 
-		using Quadr = es_fe::Quadr<1, 2>;
-		const auto grads = es_fe::gradients<Element, Quadr>(es_fe::inv_transp_jacobian(face));
-		const auto stiffness_matrix = es_fe::stiffness_matrix<Element, Quadr>(grads, factor);
+		using Quadr = esf::Quadr<1, 2>;
+		const auto grads = esf::gradients<Element, Quadr>(esf::inv_transp_jacobian(face));
+		const auto stiffness_matrix = esf::stiffness_matrix<Element, Quadr>(grads, factor);
 
-		add_matrix_to_global(system().dofs(face), stiffness_matrix);
+		add_matrix_to_global(system().dof_mapper().dofs(face), stiffness_matrix);
 	}
 
 	template<class Dofs, class Expr>
 	void add_matrix_to_global(const Dofs& dofs, const Expr& matrix)
 	{
-		for (es_fe::Local_index c = 0; c < dofs.size(); ++c)
+		for (esf::Local_index c = 0; c < dofs.size(); ++c)
 			if (dofs[c].is_free)
 			{
-				for (es_fe::Local_index r = 0; r <= c; ++r)
+				for (esf::Local_index r = 0; r <= c; ++r)
 					if (dofs[r].is_free)
 					{
-						auto i1 = dofs[r].index;
-						auto i2 = dofs[c].index;
-						es_util::sort2(i1, i2);
-
+						auto [i1, i2] = esu::sorted(dofs[r].index, dofs[c].index);
 						matrix_(i1, i2) += matrix(r, c);
 					}
 			}
 			else
 			{
-				for (es_fe::Local_index r = 0; r < dofs.size(); ++r)
+				for (esf::Local_index r = 0; r < dofs.size(); ++r)
 					if (dofs[r].is_free)
 					{
 						auto i1 = dofs[r].index;
@@ -144,20 +136,19 @@ public:
 
 	void write(const std::string& file_name)
 	{
-		using namespace es_util::au::literals;
+		using namespace esu::au::literals;
 		return;
 
-		es_la::Vector_xd phi(*mesh().n_vertices(), 0);
+		esl::Vector_xd phi(*mesh().n_vertices(), 0);
 
-		for (es_fe::Vertex_index vertex{0}; vertex < mesh().n_vertices(); ++vertex)
+		for (esf::Vertex_index vertex{0}; vertex < mesh().n_vertices(); ++vertex)
 		{
 			typename Base::System::template Var_vertex_dofs<0> vertex_dofs;
 			system().dof_mapper().template vertex_dofs<0>(vertex, vertex_dofs);
-			phi[*vertex] = es_util::au::to_volt(solution_[vertex_dofs[0].index]);
+			phi[*vertex] = esu::au::to_volt(solution_[vertex_dofs[0].index]);
 		}
 
-
-		es_fe::Matlab_writer2 m(file_name, mesh(), 1_nm);
+		esf::Matlab_writer2 m(file_name, mesh(), 1_nm);
 		m.write_vertex_field("data", phi);
 	}
 

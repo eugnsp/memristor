@@ -2,23 +2,23 @@
 #include "../params.hpp"
 #include "element.hpp"
 
-#include <es_fe/types.hpp>
-#include <es_fe/mesh/mesh2.hpp>
-#include <es_fe/boundary_cond.hpp>
-#include <es_fe/geometry.hpp>
+#include <esf/types.hpp>
+#include <esf/mesh/mesh2.hpp>
+#include <esf/boundary_cond.hpp>
+#include <esf/geometry.hpp>
 
 #include <cassert>
 #include <cstddef>
 #include <vector>
 
-using Poisson_dirichlet_contact = es_fe::Uniform_boundary_cond<Poisson_element>;
+using Poisson_dirichlet_contact = esf::Uniform_boundary_cond<Poisson_element>;
 
-class Poisson_dirichlet_core final : public es_fe::Boundary_cond<Poisson_element>
+class Poisson_dirichlet_core final : public esf::Boundary_cond<Poisson_element>
 {
 public:
 	Poisson_dirichlet_core(
-		const es_fe::Mesh<2>& mesh,
-		const es_fe::Linestring& boundary,
+		const esf::Mesh<2>& mesh,
+		const esf::Linestring& boundary,
 		const std::vector<double>& potential) :
 		Boundary_cond(mesh, boundary),
 		potential_(potential)
@@ -30,9 +30,9 @@ public:
 
 	// Returns the boundary value at a given point using linear interpolation
 	// from z-grid mid-points (i + 1/2), at which the core potential is defined
-	double value(const es_fe::Point2& pt) const
+	double value(const esf::Point2& pt) const
 	{
-		assert(es_fe::is_geom_equal(pt.x(), 0));
+		assert(esf::is_geom_equal(pt.x(), 0));
 
 		auto z = pt.y() / params::grid_spacing + .5;
 		const auto n = potential_.size() - 2;

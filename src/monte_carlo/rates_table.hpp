@@ -4,7 +4,7 @@
 #include "neighbour.hpp"
 #include "rate.hpp"
 
-#include <es_util/container/fenwick_tree.hpp>
+#include <esu/container/fenwick_tree.hpp>
 
 #include <vector>
 #include <utility>
@@ -252,8 +252,8 @@ private:
 	const Grid<Index>& grid_;
 
 	// Rates of hopping events inside the system
-	es_util::Fenwick_tree<double> int_rates_;
+	esu::Fenwick_tree<double> int_rates_;
 
 	// Rates of in- and out-hopping events due to permeable boundaries
-	es_util::Fenwick_tree<double> bnd_rates_;
+	esu::Fenwick_tree<double> bnd_rates_;
 };

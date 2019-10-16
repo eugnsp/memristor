@@ -1,9 +1,9 @@
 #pragma once
-#include <es_util/phys.hpp>
+#include <esu/phys.hpp>
 
 namespace params
 {
-using namespace es_util::au::literals;
+using namespace esu::au::literals;
 
 // Physical tags of mesh elements; the values should agree
 // with those defined in the .geo/.msh mesh file

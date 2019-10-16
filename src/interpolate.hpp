@@ -2,8 +2,8 @@
 #include "params.hpp"
 #include "monte_carlo/tensor.hpp"
 
-#include <es_fe/geometry.hpp>
-#include <es_util/numeric.hpp>
+#include <esf/geometry.hpp>
+#include <esu/numeric.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -23,10 +23,10 @@ void interpolate(
 	{
 		const auto br = bounding_rect(face);
 
-		const auto left = (br.left() - es_fe::delta) / grid_spacing;
-		const auto right = (br.right() + es_fe::delta) / grid_spacing;
-		const auto bottom = (br.bottom() - es_fe::delta) / grid_spacing;
-		const auto top = (br.top() + es_fe::delta) / grid_spacing;
+		const auto left = (br.left() - esf::delta) / grid_spacing;
+		const auto right = (br.right() + esf::delta) / grid_spacing;
+		const auto bottom = (br.bottom() - esf::delta) / grid_spacing;
+		const auto top = (br.top() + esf::delta) / grid_spacing;
 
 		const auto z_min = static_cast<unsigned int>(std::max(0., std::floor(bottom)));
 		const auto z_max = std::min(size_z - 1, static_cast<unsigned int>(std::ceil(top)));
@@ -39,27 +39,27 @@ void interpolate(
 				const auto x_min =
 					(std::abs(yd) >= left)
 						? 0u
-						: static_cast<unsigned int>(std::ceil(es_util::cathetus(left, yd)));
-				const auto x_max = static_cast<unsigned int>(es_util::cathetus(right, yd));
+						: static_cast<unsigned int>(std::ceil(esu::cathetus(left, yd)));
+				const auto x_max = static_cast<unsigned int>(esu::cathetus(right, yd));
 
 				for (auto x = center_xy - x_max; x <= center_xy - x_min; ++x)
 				{
 					const auto xd = static_cast<double>(x) - center_xy;
-					const auto r = es_util::hypot(xd, yd);
+					const auto r = esu::hypot(xd, yd);
 
-					const es_fe::Point2 pt{r * grid_spacing, z * grid_spacing};
+					const esf::Point2 pt{r * grid_spacing, z * grid_spacing};
 					if (contains(face, pt))
-						tensor(x, y, z) = fe_solution(face, pt);
+						tensor(x, y, z) = fe_solution(pt, face);
 				}
 
 				for (auto x = center_xy + x_min; x <= center_xy + x_max; ++x)
 				{
 					const auto xd = static_cast<double>(x) - center_xy;
-					const auto r = es_util::hypot(xd, yd);
+					const auto r = esu::hypot(xd, yd);
 
-					const es_fe::Point2 pt{r * grid_spacing, z * grid_spacing};
+					const esf::Point2 pt{r * grid_spacing, z * grid_spacing};
 					if (contains(face, pt))
-						tensor(x, y, z) = fe_solution(face, pt);
+						tensor(x, y, z) = fe_solution(pt, face);
 				}
 			}
 	}

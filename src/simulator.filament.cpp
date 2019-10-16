@@ -1,7 +1,7 @@
 #include "simulator.hpp"
 #include "params.hpp"
 
-#include <es_util/numeric.hpp>
+#include <esu/numeric.hpp>
 
 #include <cassert>
 #include <numeric>
@@ -26,7 +26,7 @@ void Simulator::compute_filament_shape(std::vector<unsigned int>& radii) const
 			{
 				const auto xd = static_cast<double>(x) - grid_center_xy_;
 				const auto yd = static_cast<double>(y) - grid_center_xy_;
-				const auto rd = es_util::hypot(xd, yd);
+				const auto rd = esu::hypot(xd, yd);
 				const auto r = static_cast<unsigned int>(std::round(rd));
 
 				if (r <= grid_center_xy_)
@@ -63,7 +63,7 @@ void Simulator::compute_potential_and_heat(const std::vector<unsigned int>& fila
 
 		if (const auto radius = filament_shape[z]; radius > 0)
 		{
-			const auto area = es_util::math::pi * es_util::sq(params::grid_spacing * radius);
+			const auto area = esu::math::pi * esu::sq(params::grid_spacing * radius);
 			resistivity[z] = params::filament_resistivity / area;
 		}
 		else
@@ -83,7 +83,7 @@ void Simulator::compute_potential_and_heat(const std::vector<unsigned int>& fila
 	assert(core_potential_.size() == grid_size_z_ + 1);
 
 	for (auto z = 0u; z < grid_size_z_; ++z)
-		core_heat_[z] = es_util::sq(current) * resistivity[z];
+		core_heat_[z] = esu::sq(current) * resistivity[z];
 
 	// Compute potential
 	double acc_resistivity = resistivity.front() / 2;

@@ -1,7 +1,7 @@
 #pragma once
 #include "point.hpp"
 
-#include <es_la/io/matfile_writer.hpp>
+#include <esl/io/matfile_writer.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -131,7 +131,7 @@ public:
 
 	void write(const std::string& file_name)
 	{
-		es_la::Matfile_writer mat_file(file_name);
+		esl::Matfile_writer mat_file(file_name);
 
 		mat_file.write("nx", extents_.x);
 		mat_file.write("ny", extents_.y);
